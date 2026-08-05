@@ -598,9 +598,10 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
                 <div>
                   <div className="text-sm font-bold text-slate-800">
                     {latestMurojaah?.murojaahMaterial || 'Belum setoran'}
-                    {latestMurojaah?.murojaahAyat ? ` (${latestMurojaah.murojaahAyat})` : ''}
                   </div>
-                  <div className="text-xs text-slate-500">Materi Murojaah</div>
+                  <div className="text-xs text-slate-500">
+                    {latestMurojaah ? `Ayat: ${latestMurojaah.murojaahAyat || '-'}` : '-'}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
                   <span className="text-slate-500">Kualitas: <strong className="text-blue-800">{latestMurojaah?.murojaahQuality || '-'}</strong></span>
