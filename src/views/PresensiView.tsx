@@ -46,9 +46,9 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
     halaqohs[0]?.id || ''
   );
 
-  // Local state for temporary attendance toggles
+  // Local state for temporary attendance toggles (status can be empty string '')
   const [localAttendance, setLocalAttendance] = useState<
-    Record<string, { status: AttendanceStatus; notes?: string }>
+    Record<string, { status: AttendanceStatus | ''; notes?: string }>
   >({});
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
@@ -64,19 +64,19 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
       (r) => r.date === selectedDate && r.halaqohId === selectedHalaqohId
     );
 
-    const map: Record<string, { status: AttendanceStatus; notes?: string }> = {};
+    const map: Record<string, { status: AttendanceStatus | ''; notes?: string }> = {};
     currentStudents.forEach((s) => {
-      const rec = existing.find((r) => r.santriId === s.id);
+      const rec = existing.find((r) => String(r.santriId) === String(s.id));
       map[s.id] = {
-        status: rec ? rec.status : 'H', // default Hadir
+        status: rec ? rec.status : '', // default kosong if not recorded
         notes: rec?.notes || '',
       };
     });
     setLocalAttendance(map);
   }, [selectedDate, selectedHalaqohId, attendanceRecords, santris]);
 
-  // 4.2.1 Pilihan tandai semua: hadir, izin, sakit, alpha, telat
-  const handleMarkAll = (status: AttendanceStatus) => {
+  // 4.2.1 Pilihan tandai semua: hadir, izin, sakit, alpha, telat, atau kosongkan
+  const handleMarkAll = (status: AttendanceStatus | '') => {
     const updated = { ...localAttendance };
     currentStudents.forEach((s) => {
       updated[s.id] = {
@@ -87,17 +87,22 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
     setLocalAttendance(updated);
   };
 
+  // If status is clicked again when already selected, toggle to empty ('')
   const handleIndividualChange = (
     santriId: string,
-    status: AttendanceStatus
+    clickedStatus: AttendanceStatus
   ) => {
-    setLocalAttendance((prev) => ({
-      ...prev,
-      [santriId]: {
-        ...prev[santriId],
-        status,
-      },
-    }));
+    setLocalAttendance((prev) => {
+      const currentStatus = prev[santriId]?.status;
+      const newStatus = currentStatus === clickedStatus ? '' : clickedStatus;
+      return {
+        ...prev,
+        [santriId]: {
+          ...prev[santriId],
+          status: newStatus,
+        },
+      };
+    });
   };
 
   const handleNotesChange = (santriId: string, notes: string) => {
@@ -117,6 +122,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
   let sakitCount = 0;
   let alphaCount = 0;
   let telatCount = 0;
+  let kosongCount = 0;
 
   currentStudents.forEach((s) => {
     const st = localAttendance[s.id]?.status;
@@ -125,9 +131,10 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
     else if (st === 'S') sakitCount++;
     else if (st === 'A') alphaCount++;
     else if (st === 'T') telatCount++;
+    else kosongCount++;
   });
 
-  const checkedCount = totalCount; // all loaded defaulted or updated
+  const checkedCount = totalCount - kosongCount;
 
   // 4.2.5 Tombol Simpan Presensi
   const handleSave = () => {
@@ -136,7 +143,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
       date: selectedDate,
       halaqohId: selectedHalaqohId,
       santriId: s.id,
-      status: localAttendance[s.id]?.status || 'H',
+      status: (localAttendance[s.id]?.status || '') as AttendanceStatus,
       notes: localAttendance[s.id]?.notes || '',
     }));
 
@@ -263,6 +270,13 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
               >
                 Telat (T)
               </button>
+              <button
+                type="button"
+                onClick={() => handleMarkAll('')}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-600 text-slate-700 hover:text-white border border-slate-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+              >
+                Kosongkan Semua
+              </button>
             </div>
           </div>
 
@@ -272,7 +286,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
               Status Presensi: Sudah dicek <span className="text-emerald-700">{checkedCount}</span> dari{' '}
               <span className="text-slate-900">{totalCount}</span> peserta.
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
               <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold flex items-center justify-between">
                 <span>Hadir (H):</span>
                 <span className="font-bold text-sm">{hadirCount}</span>
@@ -293,6 +307,10 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
                 <span>Telat (T):</span>
                 <span className="font-bold text-sm">{telatCount}</span>
               </div>
+              <div className="p-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 font-semibold flex items-center justify-between">
+                <span>Kosong:</span>
+                <span className="font-bold text-sm">{kosongCount}</span>
+              </div>
             </div>
           </div>
 
@@ -303,7 +321,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
                 <tr>
                   <th className="px-4 py-3 w-12 text-center">No</th>
                   <th className="px-4 py-3">Nama Lengkap & NIS</th>
-                  <th className="px-4 py-3 text-center">Status Kehadiran (H / I / S / A / T)</th>
+                  <th className="px-4 py-3 text-center">Status Kehadiran (Klik ulang untuk kosongkan)</th>
                   <th className="px-4 py-3">Keterangan Catatan</th>
                 </tr>
               </thead>
@@ -316,7 +334,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
                   </tr>
                 ) : (
                   currentStudents.map((s, idx) => {
-                    const st = localAttendance[s.id]?.status || 'H';
+                    const st = localAttendance[s.id]?.status || '';
                     const note = localAttendance[s.id]?.notes || '';
 
                     return (
@@ -341,6 +359,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
                                   key={btn.value}
                                   type="button"
                                   onClick={() => handleIndividualChange(s.id, btn.value)}
+                                  title={isSelected ? 'Klik ulang untuk mengosongkan status' : `Set status ${btn.label}`}
                                   className={`w-8 h-8 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                                     isSelected
                                       ? `${btn.bg} shadow-xs scale-105 ring-2 ring-emerald-500/20`
@@ -351,6 +370,11 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
                                 </button>
                               );
                             })}
+                            {st === '' && (
+                              <span className="ml-1 px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded font-medium italic">
+                                Kosong
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
