@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Footer info badge inside sidebar */}
         <div className="p-3 border-t border-slate-800/80 text-[11px] text-slate-500 bg-slate-950/40">
           <div className="flex items-center justify-between">
-            <span>AQU v1.3.3</span>
+            <span>AQU v1.3.4</span>
             <span className="text-emerald-500 font-medium">Online</span>
           </div>
           <div className="text-[10px] text-slate-400 mt-1 leading-tight">
