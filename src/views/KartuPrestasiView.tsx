@@ -159,6 +159,15 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
 
   const formSectionRef = useRef<HTMLDivElement>(null);
 
+  // Helper to capitalize each word of quality text (e.g. "mumtaz" -> "Mumtaz", "jayyid jiddan" -> "Jayyid Jiddan")
+  const formatQualityText = (str?: string) => {
+    if (!str) return '-';
+    return str
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Start Editing Existing Record
   const handleStartEdit = (record: PrestasiRecord) => {
     setEditingId(record.id);
@@ -567,7 +576,7 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
                   <div className="text-xs text-slate-500">Ayat: {latestZiyadah?.ziyadahAyat || 'Semua'}</div>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
-                  <span className="text-slate-500">Kualitas: <strong className="text-amber-800">{latestZiyadah?.ziyadahQuality || '-'}</strong></span>
+                  <span className="text-slate-500">Kualitas: <strong className="text-amber-800">{formatQualityText(latestZiyadah?.ziyadahQuality)}</strong></span>
                   <span className={`px-2 py-0.5 rounded font-bold capitalize ${latestZiyadah?.status === 'lanjut' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                     {latestZiyadah?.status || '-'}
                   </span>
@@ -604,7 +613,7 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
-                  <span className="text-slate-500">Kualitas: <strong className="text-blue-800">{latestMurojaah?.murojaahQuality || '-'}</strong></span>
+                  <span className="text-slate-500">Kualitas: <strong className="text-blue-800">{formatQualityText(latestMurojaah?.murojaahQuality)}</strong></span>
                   <span className={`px-2 py-0.5 rounded font-bold capitalize ${latestMurojaah?.status === 'lanjut' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                     {latestMurojaah?.status || '-'}
                   </span>
@@ -1044,12 +1053,12 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
                         )}
                         {r.type === 'ziyadah' && r.ziyadahQuality && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-bold">
-                            {r.ziyadahQuality}
+                            {formatQualityText(r.ziyadahQuality)}
                           </span>
                         )}
                         {r.type === 'murojaah' && r.murojaahQuality && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-bold">
-                            {r.murojaahQuality}
+                            {formatQualityText(r.murojaahQuality)}
                           </span>
                         )}
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold capitalize ${r.status === 'lanjut' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
