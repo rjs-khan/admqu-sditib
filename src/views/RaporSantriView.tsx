@@ -845,7 +845,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                     <td className="border border-slate-900 px-3 py-1.5 text-left font-medium">
                       {p.type === 'tahsin' && `${p.tahsinMaterial} (${p.tahsinPageAyat || '-'})`}
                       {p.type === 'ziyadah' && `Juz ${p.ziyadahJuz} - ${p.ziyadahSurah} (${p.ziyadahAyat || 'Semua'})`}
-                      {p.type === 'murojaah' && `${p.murojaahMaterial}`}
+                      {p.type === 'murojaah' && `${p.murojaahMaterial}${p.murojaahAyat ? ` (${p.murojaahAyat.toLowerCase().startsWith('ayat') || p.murojaahAyat.toLowerCase().startsWith('hal') ? p.murojaahAyat : `Ayat ${p.murojaahAyat}`})` : ''}`}
                     </td>
                     <td className="border border-slate-900 px-2 py-1.5 font-bold uppercase">
                       {p.type === 'tahsin' ? p.tahsinGrade : p.type === 'ziyadah' ? p.ziyadahQuality : p.murojaahQuality}
