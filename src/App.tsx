@@ -435,9 +435,28 @@ export default function App() {
   };
 
   const handleSaveAttendance = (records: AttendanceRecord[]) => {
-    setAttendanceRecords(records);
-    storage.saveAttendanceRecords(records);
-    syncState({ attendanceRecords: records });
+    setAttendanceRecords((prev) => {
+      const prevList = prev || [];
+      const map = new Map<string, AttendanceRecord>();
+      prevList.forEach((r) => {
+        if (r && r.date && r.santriId) {
+          map.set(`${r.date}_${r.santriId}`, r);
+        }
+      });
+      records.forEach((r) => {
+        if (r && r.date && r.santriId) {
+          if (r.status) {
+            map.set(`${r.date}_${r.santriId}`, r);
+          } else {
+            map.delete(`${r.date}_${r.santriId}`);
+          }
+        }
+      });
+      const updated = Array.from(map.values());
+      storage.saveAttendanceRecords(updated);
+      syncState({ attendanceRecords: updated });
+      return updated;
+    });
   };
 
   const handleSaveJournalItem = (j: JournalEntry) => {
