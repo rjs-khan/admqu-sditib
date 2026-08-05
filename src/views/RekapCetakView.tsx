@@ -881,15 +881,25 @@ export const RekapCetakView: React.FC<RekapCetakViewProps> = ({
                     </tr>
                   ) : (
                     classSantris.map((s, idx) => {
-                      const sAtt = (attendanceRecords || []).filter(
-                        (a) => a.santriId === s.id && a.date >= fromDate && a.date <= toDate
-                      );
+                      const sAtt = (attendanceRecords || []).filter((a) => {
+                        if (String(a.santriId).trim() !== String(s.id).trim()) return false;
+                        const recDate = (a.date || '').split('T')[0];
+                        if (fromDate && recDate < fromDate) return false;
+                        if (toDate && recDate > toDate) return false;
+                        return true;
+                      });
 
-                      const hadir = sAtt.filter((a) => a.status === 'H').length;
-                      const izin = sAtt.filter((a) => a.status === 'I').length;
-                      const sakit = sAtt.filter((a) => a.status === 'S').length;
-                      const alpha = sAtt.filter((a) => a.status === 'A').length;
-                      const telat = sAtt.filter((a) => a.status === 'T').length;
+                      const isH = (st?: string) => st === 'H' || st?.toLowerCase() === 'hadir';
+                      const isI = (st?: string) => st === 'I' || st?.toLowerCase() === 'izin';
+                      const isS = (st?: string) => st === 'S' || st?.toLowerCase() === 'sakit';
+                      const isA = (st?: string) => st === 'A' || st?.toLowerCase() === 'alpha' || st?.toLowerCase() === 'alpa';
+                      const isT = (st?: string) => st === 'T' || st?.toLowerCase() === 'telat' || st?.toLowerCase() === 'terlambat';
+
+                      const hadir = sAtt.filter((a) => isH(a.status)).length;
+                      const izin = sAtt.filter((a) => isI(a.status)).length;
+                      const sakit = sAtt.filter((a) => isS(a.status)).length;
+                      const alpha = sAtt.filter((a) => isA(a.status)).length;
+                      const telat = sAtt.filter((a) => isT(a.status)).length;
 
                       // Jumlah kehadiran = jumlah hadir + telat
                       const jumlahKehadiran = hadir + telat;
@@ -1118,25 +1128,25 @@ export const RekapCetakView: React.FC<RekapCetakViewProps> = ({
         {renderDocumentTables()}
 
         {/* Signatures */}
-        <div className="pt-8 flex items-center justify-between text-xs text-slate-900 px-4 avoid-break signature-section">
-          <div className="text-center space-y-12">
+        <div className="pt-8 flex items-[flex-end] justify-between text-xs text-slate-900 px-4 avoid-break signature-section">
+          <div className="flex flex-col justify-between text-center min-h-[100px] max-w-[240px] leading-tight">
             <div>
               <p>Mengetahui,</p>
-              <p className="font-bold">{settings.headmasterTitle || 'Kepala Sekolah'}</p>
+              <p className="font-bold break-words">{settings.headmasterTitle || 'Kepala Sekolah'}</p>
             </div>
-            <div>
-              <p className="font-bold underline uppercase">{settings.headmasterName || 'Dr. H. Muhammad Ridwan, M.A.'}</p>
+            <div className="mt-8">
+              <p className="font-bold underline uppercase break-words">{settings.headmasterName || 'Dr. H. Muhammad Ridwan, M.A.'}</p>
               <p className="font-mono text-[11px]">NIP: {settings.headmasterNip || '-'}</p>
             </div>
           </div>
 
-          <div className="text-center space-y-12">
+          <div className="flex flex-col justify-between text-center min-h-[100px] max-w-[240px] leading-tight">
             <div>
               <p>{settings.city || 'Bandung'}, {formatIndonesianFullDate(todayStr)}</p>
-              <p className="font-bold">Guru Qur'an / Pengajar Halaqoh</p>
+              <p className="font-bold break-words">{activeUser.title || "Guru Qur'an / Pengajar Halaqoh"}</p>
             </div>
-            <div>
-              <p className="font-bold underline uppercase">{activeUser.name}</p>
+            <div className="mt-8">
+              <p className="font-bold underline uppercase break-words">{activeUser.name}</p>
               <p className="font-mono text-[11px]">NIP: {activeUser.nip || '-'}</p>
             </div>
           </div>
