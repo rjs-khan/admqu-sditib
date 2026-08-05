@@ -834,7 +834,7 @@ export const RekapCetakView: React.FC<RekapCetakViewProps> = ({
                           </td>
                           <td className="border border-slate-900 px-3 py-2 text-left">
                             {latestMurojaah
-                              ? `${latestMurojaah.murojaahMaterial || '-'} [Kualitas: ${latestMurojaah.murojaahQuality || '-'}]`
+                              ? `${latestMurojaah.murojaahMaterial || '-'}${latestMurojaah.murojaahAyat ? ` (${latestMurojaah.murojaahAyat.toLowerCase().startsWith('ayat') || latestMurojaah.murojaahAyat.toLowerCase().startsWith('hal') ? latestMurojaah.murojaahAyat : `Ayat ${latestMurojaah.murojaahAyat}`})` : ''} [Kualitas: ${latestMurojaah.murojaahQuality || '-'}]`
                               : '-'}
                           </td>
                           <td className="border border-slate-900 px-3 py-2 text-left text-[11px] text-slate-700">
