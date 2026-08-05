@@ -1,0 +1,6 @@
+{
+  "name": "Aplikasi Administrasi Qur'an (AQU)",
+  "description": "Aplikasi Web App Administrasi Qur'an untuk pengelolaan data kelas, santri, presensi, jurnal mengajar, kartu prestasi, penilaian, rekap & rapor PDF, dan pengaturan sekolah.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
