@@ -1,6 +1,6 @@
 /**
  * Utility for generating neat, formatted sequential IDs across the application.
- * e.g., 'snt-1', 'snt-2', 'hlq-1', 'hlq-2', 'usr-1', 'usr-2', etc.
+ * e.g., 'snt-0001', 'snt-0002', 'hlq-0001', 'hlq-0002', 'usr-0001', 'usr-0002', etc.
  */
 
 export function generateCleanId(prefix: string, list: { id?: string }[] = [], indexOffset = 0): string {
@@ -22,21 +22,41 @@ export function generateCleanId(prefix: string, list: { id?: string }[] = [], in
     }
   });
 
-  return `${prefix}-${maxNum + 1 + indexOffset}`;
+  const nextNum = maxNum + 1 + indexOffset;
+  const padded = String(nextNum).padStart(4, '0');
+  return `${prefix}-${padded}`;
 }
 
 /**
- * Checks if an ID is messy (contains timestamp, snt-imp, or long random string)
+ * Checks if an ID is messy (contains timestamp, unpadded digits, or non-standard format)
  */
 export function isMessyId(id: string, prefix: string): boolean {
   if (!id) return true;
-  if (id === 'user-admin') return false; // keep default admin ID
-  const cleanRegex = new RegExp(`^${prefix}-\\d{1,5}$`, 'i');
+  if (id === 'user-admin' || id === 'u-admin' || id === 'default') return false; // keep default special IDs
+  // Must be prefix followed by at least 4 digits (e.g. snt-0001)
+  const cleanRegex = new RegExp(`^${prefix}-\\d{4,}$`, 'i');
   return !cleanRegex.test(id);
 }
 
 /**
- * Clean and normalize all IDs in state if messy timestamp-based IDs are detected.
+ * Helper to convert an ID with number suffix to 4-digit padded format if possible
+ */
+function formatToPaddedId(id: string, defaultPrefix: string, fallbackCount: number): string {
+  if (!id) return `${defaultPrefix}-${String(fallbackCount).padStart(4, '0')}`;
+  if (id === 'user-admin' || id === 'u-admin' || id === 'default') return id;
+
+  const match = id.match(/^([a-z]+)-(\d+)$/i);
+  if (match) {
+    const pref = match[1];
+    const num = parseInt(match[2], 10);
+    return `${pref}-${String(num).padStart(4, '0')}`;
+  }
+
+  return `${defaultPrefix}-${String(fallbackCount).padStart(4, '0')}`;
+}
+
+/**
+ * Clean and normalize all IDs in state if messy timestamp-based or unpadded IDs are detected.
  * Automatically updates references across relational arrays.
  */
 export function normalizeAllDataIds(data: {
@@ -64,8 +84,9 @@ export function normalizeAllDataIds(data: {
   const hlqMap: Record<string, string> = {};
   let hlqCount = 1;
   halaqohs.forEach((h) => {
-    if (isMessyId(h.id, 'hlq')) {
-      const newId = `hlq-${hlqCount}`;
+    const cleanRegex = /^(hlq|kls)-\d{4,}$/i;
+    if (!h.id || !cleanRegex.test(h.id)) {
+      const newId = formatToPaddedId(h.id, 'hlq', hlqCount);
       hlqMap[h.id] = newId;
       h.id = newId;
       modified = true;
@@ -96,8 +117,9 @@ export function normalizeAllDataIds(data: {
   const santriMap: Record<string, string> = {};
   let santriCount = 1;
   santris.forEach((s) => {
-    if (isMessyId(s.id, 'snt')) {
-      const newId = `snt-${santriCount}`;
+    const cleanRegex = /^(snt|str)-\d{4,}$/i;
+    if (!s.id || !cleanRegex.test(s.id)) {
+      const newId = formatToPaddedId(s.id, 'snt', santriCount);
       santriMap[s.id] = newId;
       s.id = newId;
       modified = true;
@@ -121,21 +143,88 @@ export function normalizeAllDataIds(data: {
   // 3. Normalize User IDs
   let userCount = 1;
   users.forEach((u) => {
-    if (u.id !== 'user-admin' && isMessyId(u.id, 'usr')) {
-      u.id = `usr-${userCount}`;
-      modified = true;
+    if (u.id !== 'user-admin' && u.id !== 'u-admin') {
+      const cleanRegex = /^usr-\d{4,}$/i;
+      if (!u.id || !cleanRegex.test(u.id)) {
+        u.id = formatToPaddedId(u.id, 'usr', userCount);
+        modified = true;
+      }
+      userCount++;
     }
-    if (u.id !== 'user-admin') userCount++;
   });
 
   // 4. Normalize Standards
   let stdCount = 1;
   standards.forEach((st) => {
-    if (isMessyId(st.id, 'std')) {
-      st.id = `std-${stdCount}`;
+    const cleanRegex = /^std-\d{4,}$/i;
+    if (!st.id || !cleanRegex.test(st.id)) {
+      st.id = formatToPaddedId(st.id, 'std', stdCount);
       modified = true;
     }
     stdCount++;
+  });
+
+  // 5. Normalize Journals
+  let jrnCount = 1;
+  journals.forEach((j) => {
+    const cleanRegex = /^jrn-\d{4,}$/i;
+    if (!j.id || !cleanRegex.test(j.id)) {
+      j.id = formatToPaddedId(j.id, 'jrn', jrnCount);
+      modified = true;
+    }
+    jrnCount++;
+  });
+
+  // 6. Normalize Prestasi
+  let prsCount = 1;
+  prestasi.forEach((p) => {
+    const cleanRegex = /^prs-\d{4,}$/i;
+    if (!p.id || !cleanRegex.test(p.id)) {
+      p.id = formatToPaddedId(p.id, 'prs', prsCount);
+      modified = true;
+    }
+    prsCount++;
+  });
+
+  // 7. Normalize Grades
+  let grdCount = 1;
+  grades.forEach((g) => {
+    const cleanRegex = /^grd-\d{4,}$/i;
+    if (!g.id || !cleanRegex.test(g.id)) {
+      g.id = formatToPaddedId(g.id, 'grd', grdCount);
+      modified = true;
+    }
+    grdCount++;
+  });
+
+  // 8. Normalize Attendance IDs (format ending suffix to match 4-digit santri ID or 4-digit seq)
+  let attCount = 1;
+  attendance.forEach((a) => {
+    if (!a.id) {
+      a.id = `att-${String(attCount).padStart(4, '0')}`;
+      modified = true;
+    } else {
+      // Check composite format: att-YYYY-MM-DD-santriId
+      const dateMatch = a.id.match(/^(att-\d{4}-\d{2}-\d{2})-(.+)$/i);
+      if (dateMatch) {
+        const prefixDate = dateMatch[1];
+        // Suffix was old santri ID or index. Use updated 4-digit santriId as suffix!
+        const targetSuffix = a.santriId || dateMatch[2];
+        const newAttId = `${prefixDate}-${targetSuffix}`;
+        if (newAttId !== a.id) {
+          a.id = newAttId;
+          modified = true;
+        }
+      } else {
+        // Simple att-1 or att-001
+        const cleanRegex = /^att-\d{4,}$/i;
+        if (!cleanRegex.test(a.id)) {
+          a.id = formatToPaddedId(a.id, 'att', attCount);
+          modified = true;
+        }
+      }
+    }
+    attCount++;
   });
 
   return {
