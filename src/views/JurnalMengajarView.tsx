@@ -47,7 +47,8 @@ export const JurnalMengajarView: React.FC<JurnalMengajarViewProps> = ({
   const handleOpenNewModal = () => {
     setEditingId(null);
     setDate(todayStr);
-    setHalaqohId(halaqohs[0]?.id || '');
+    const defaultHalaqoh = filterHalaqohId !== 'semua' ? filterHalaqohId : (halaqohs[0]?.id || '');
+    setHalaqohId(defaultHalaqoh);
     setMaterial('');
     setNotesAndEvaluation('');
     setIsModalOpen(true);
@@ -77,13 +78,24 @@ export const JurnalMengajarView: React.FC<JurnalMengajarViewProps> = ({
     };
 
     onSaveJournal(newJournal);
+
+    // If currently filtering a specific class and saved for a different class, reset filter to 'semua'
+    if (filterHalaqohId !== 'semua' && filterHalaqohId !== halaqohId) {
+      setFilterHalaqohId('semua');
+    }
+
     setIsModalOpen(false);
   };
 
-  // Filtered Journals
-  const filteredJournals = (journals || []).filter(
-    (j) => filterHalaqohId === 'semua' || j.halaqohId === filterHalaqohId
-  );
+  // Filtered & Sorted Journals (newest date & ID first)
+  const filteredJournals = (journals || [])
+    .filter((j) => filterHalaqohId === 'semua' || j.halaqohId === filterHalaqohId)
+    .sort((a, b) => {
+      if (a.date !== b.date) {
+        return b.date.localeCompare(a.date);
+      }
+      return (b.id || '').localeCompare(a.id || '');
+    });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
