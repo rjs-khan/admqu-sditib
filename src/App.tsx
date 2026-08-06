@@ -467,7 +467,7 @@ export default function App() {
         updated = [...prev];
         updated[idx] = j;
       } else {
-        updated = [...prev, j];
+        updated = [j, ...prev];
       }
       storage.saveJournalEntries(updated);
       syncState({ journalEntries: updated });
