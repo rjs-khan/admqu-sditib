@@ -170,7 +170,7 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     {
       name: '1. Data_Kelas',
       desc: 'Tabel informasi halaqoh / kelas bimbingan',
-      headers: ['id', 'name', 'level', 'waGroupLink', 'createdAt'],
+      headers: ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'],
       rows: [
         ['kls-001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
         ['kls-002', 'Halaqoh An-Nur', 'Lanjut', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
@@ -179,16 +179,16 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     {
       name: '2. Data_Santri',
       desc: 'Tabel data murid / santri terdaftar',
-      headers: ['id', 'nis', 'fullName', 'gender', 'halaqohId', 'status', 'parentWa', 'enrolledAt'],
+      headers: ['id', 'id_kelas', 'nama_lengkap', 'nis', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'status', 'tanggal_masuk', 'nama_ayah', 'nama_ibu', 'pekerjaan_ayah', 'pekerjaan_ibu', 'no_wa_ortu'],
       rows: [
-        ['str-001', '2025001', 'Ahmad Zaki Al-Farisi', 'L', 'kls-001', 'aktif', '081234567890', '2025-01-10'],
-        ['str-002', '2025002', 'Fatimah Az-Zahra', 'P', 'kls-001', 'aktif', '081987654321', '2025-01-10'],
+        ['str-001', 'kls-001', 'Ahmad Zaki Al-Farisi', '2025001', 'L', 'Bandung', '2012-05-10', 'aktif', '2025-01-10', 'Bapak Zaki', 'Ibu Zaki', 'Wiraswasta', 'Ibu Rumah Tangga', '081234567890'],
+        ['str-002', 'kls-001', 'Fatimah Az-Zahra', '2025002', 'P', 'Jakarta', '2012-08-15', 'aktif', '2025-01-10', 'Bapak Ahmad', 'Ibu Ahmad', 'PNS', 'Guru', '081987654321'],
       ],
     },
     {
       name: '3. Data_Presensi',
       desc: 'Tabel riwayat kehadiran harian',
-      headers: ['id', 'date', 'halaqohId', 'santriId', 'status', 'note'],
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'status_kehadiran', 'catatan'],
       rows: [
         ['att-001', '2025-02-01', 'kls-001', 'str-001', 'H', 'Hadir tepat waktu'],
         ['att-002', '2025-02-01', 'kls-001', 'str-002', 'I', 'Izin acara keluarga'],
@@ -197,41 +197,41 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     {
       name: '4. Data_Jurnal',
       desc: 'Tabel catatan materi & jurnal mengajar ustadz/ustadzah',
-      headers: ['id', 'date', 'halaqohId', 'teacherId', 'teacherName', 'materi', 'tahfizhClassMaterial', 'absentSummary', 'notes'],
+      headers: ['id', 'tanggal', 'id_kelas', 'materi_pelajaran', 'catatan_dan_evaluasi', 'nama_pengajar'],
       rows: [
-        ['jrn-001', '2025-02-01', 'kls-001', 'u-admin', 'Ustadz Abdullah, M.Ag.', "Tajwid Mad Thabi'i", 'Surah Al-Mulk ayat 1-10', 'H: 14, I: 1, S: 0, A: 0', 'Santri antusias'],
+        ['jrn-001', '2025-02-01', 'kls-001', "Tajwid Mad Thabi'i", 'Santri antusias', 'Ustadz Abdullah, M.Ag.'],
       ],
     },
     {
       name: '5. Data_Prestasi',
       desc: 'Tabel mutabaah hafalan (Tahsin, Ziyadah, Murojaah)',
-      headers: ['id', 'date', 'santriId', 'halaqohId', 'type', 'tahsinMaterial', 'tahsinPageAyat', 'tahsinGrade', 'ziyadahJuz', 'ziyadahSurah', 'ziyadahAyat', 'ziyadahQuality', 'murojaahMaterial', 'murojaahQuality', 'notes', 'status'],
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'jenis_setoran', 'catatan', 'status', 'materi_tahsin', 'halaman_ayat_tahsin', 'nilai_tahsin', 'juz_ziyadah', 'surah_ziyadah', 'ayat_ziyadah', 'kualitas_ziyadah', 'materi_murojaah', 'ayat_murojaah', 'kualitas_murojaah'],
       rows: [
-        ['prs-001', '2025-02-01', 'str-001', 'kls-001', 'tahsin', 'Jilid 4 Hal 12', 'Hal 12', 'Mumtaz (Lancar)', '', '', '', '', '', '', 'Bagus', 'lulus'],
-        ['prs-002', '2025-02-01', 'str-001', 'kls-001', 'ziyadah', '', '', '', '30', 'An-Naba', '1-20', 'Jayyid (Lancar)', '', '', 'Lancar tanpa keliru', 'lulus'],
+        ['prs-001', '2025-02-01', 'kls-001', 'str-001', 'tahsin', 'Bagus', 'lulus', 'Jilid 4 Hal 12', 'Hal 12', 'Mumtaz (Lancar)', '', '', '', '', '', '', ''],
+        ['prs-002', '2025-02-01', 'kls-001', 'str-001', 'ziyadah', 'Lancar tanpa keliru', 'lulus', '', '', '', '30', 'An-Naba', '1-20', 'Jayyid (Lancar)', '', '', ''],
       ],
     },
     {
       name: '6. Data_Nilai',
       desc: 'Tabel rekapitulasi penilaian berkala (PTS/PAS)',
-      headers: ['id', 'date', 'halaqohId', 'santriId', 'assessmentType', 'subjectArea', 'methodKitab', 'score'],
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'nilai', 'jenis_ujian', 'bidang_studi', 'metode_kitab'],
       rows: [
-        ['grd-001', '2025-02-15', 'kls-001', 'str-001', 'PTS', 'Tahsin', "Al-Qur'an", '95'],
-        ['grd-002', '2025-02-15', 'kls-001', 'str-002', 'PTS', 'Tahsin', "Al-Qur'an", '88'],
+        ['grd-001', '2025-02-15', 'kls-001', 'str-001', '95', 'PTS', 'Tahsin', "Al-Qur'an"],
+        ['grd-002', '2025-02-15', 'kls-001', 'str-002', '88', 'PTS', 'Tahsin', "Al-Qur'an"],
       ],
     },
     {
       name: '7. Data_Pengaturan',
       desc: 'Tabel identitas & konfigurasi sekolah',
-      headers: ['logoUrl', 'kopUrl', 'foundation', 'schoolName', 'accreditation', 'address', 'city', 'paperSize', 'paperOrientation', 'academicYear', 'headmasterName', 'headmasterNip', 'headmasterTitle', 'gradeMaxScale'],
+      headers: ['id', 'url_logo', 'url_logo_yayasan', 'url_kop', 'yayasan', 'nama_sekolah', 'akreditasi', 'alamat', 'kota', 'ukuran_kertas', 'orientasi_kertas', 'tahun_ajaran', 'nama_kepala_sekolah', 'nip_kepala_sekolah', 'jabatan_kepala_sekolah', 'skala_maksimal_nilai', 'istilah_murid', 'sapaan_ortu', 'url_spreadsheet'],
       rows: [
-        ['/assets/logo.png', '', "Yayasan Bina Insani Qur'ani", 'SMP IT & Mahad Tahfizh AQU', 'Terakreditasi A', 'Jl. Pendidikan No. 123', 'Bandung', 'A4', 'portrait', '2025/2026', 'Dr. H. Muhammad Ridwan, M.A.', '19780512 200312 1 002', 'Kepala Sekolah', '100'],
+        ['default', '/assets/logo.png', '', '', "Yayasan Bina Insani Qur'ani", 'SMP IT & Mahad Tahfizh AQU', 'Terakreditasi A', 'Jl. Pendidikan No. 123', 'Bandung', 'A4', 'portrait', '2025/2026', 'Dr. H. Muhammad Ridwan, M.A.', '19780512 200312 1 002', 'Kepala Sekolah', '100', 'Murid', 'Bapak/Ibu', ''],
       ],
     },
     {
       name: '8. Data_Standar_Nilai',
       desc: 'Tabel skala huruf & predikat nilai',
-      headers: ['id', 'letter', 'predicate', 'description', 'minScore'],
+      headers: ['id', 'huruf', 'predikat', 'keterangan', 'nilai_minimal'],
       rows: [
         ['std-001', 'A+', 'Mumtaz', 'Sangat Baik Sekali / Perfect', '90'],
         ['std-002', 'A', 'Jayyid Jiddan', 'Baik Sekali / Sangat Lancar', '80'],
@@ -243,7 +243,7 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     {
       name: '9. Data_Pengguna',
       desc: 'Tabel akun pengajar & administrator',
-      headers: ['id', 'name', 'nip', 'title', 'role', 'username', 'password'],
+      headers: ['id', 'nama_pengguna', 'nip', 'jabatan', 'peran', 'username', 'password'],
       rows: [
         ['u-admin', 'Ustadz Abdullah, M.Ag.', '19850101 201001 1 001', 'Kepala Pengajar Tahfizh', 'admin', 'admin', 'admin123'],
         ['u-guru1', 'Ustadzah Siti Aminah, S.Pd.I', '19900315 201502 2 003', 'Guru Tahsin', 'guru', 'guru', 'guru123'],
@@ -251,7 +251,7 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     },
   ];
 
-  const appScriptCode = `// KODE GOOGLE APPS SCRIPT DATABASE SINKRONISASI DUA ARAH AQU
+  const appScriptCode = `// KODE GOOGLE APPS SCRIPT DATABASE SINKRONISASI DUA ARAH AQU v1.3.6
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -343,41 +343,41 @@ function doPost(e) {
     }
 
     if (data.halaqohs) {
-      writeToSheet('1. Data_Kelas', ['id', 'name', 'level', 'waGroupLink', 'createdAt'],
-        data.halaqohs.map(function(k) { return [k.id, k.name, k.level, k.waGroupLink, k.createdAt]; }));
+      writeToSheet('1. Data_Kelas', ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'],
+        data.halaqohs.map(function(k) { return [k.id, k.name || k.nama_kelas || '', k.level || k.tingkat || '', k.waGroupLink || k.link_grup_wa || '', k.createdAt || k.tanggal_dibuat || '']; }));
     }
     if (data.santris) {
-      writeToSheet('2. Data_Santri', ['id', 'nis', 'fullName', 'gender', 'halaqohId', 'status', 'parentWa', 'enrolledAt'],
-        data.santris.map(function(s) { return [s.id, s.nis, s.fullName, s.gender, s.halaqohId, s.status, s.parentWa, s.entryDate || s.enrolledAt]; }));
+      writeToSheet('2. Data_Santri', ['id', 'id_kelas', 'nama_lengkap', 'nis', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'status', 'tanggal_masuk', 'nama_ayah', 'nama_ibu', 'pekerjaan_ayah', 'pekerjaan_ibu', 'no_wa_ortu'],
+        data.santris.map(function(s) { return [s.id, s.halaqohId || s.id_kelas || '', s.fullName || s.nama_lengkap || '', s.nis || '', s.gender || s.jenis_kelamin || 'L', s.birthPlace || s.tempat_lahir || '', s.birthDate || s.tanggal_lahir || '', s.status || 'aktif', s.entryDate || s.tanggal_masuk || s.enrolledAt || '', s.fatherName || s.nama_ayah || '', s.motherName || s.nama_ibu || '', s.fatherJob || s.pekerjaan_ayah || '', s.motherJob || s.pekerjaan_ibu || '', s.parentWa || s.no_wa_ortu || '']; }));
     }
     if (data.attendanceRecords) {
-      writeToSheet('3. Data_Presensi', ['id', 'date', 'halaqohId', 'santriId', 'status', 'note'],
-        data.attendanceRecords.map(function(a) { return [a.id, a.date, a.halaqohId, a.santriId, a.status, a.notes || a.note]; }));
+      writeToSheet('3. Data_Presensi', ['id', 'tanggal', 'id_kelas', 'id_santri', 'status_kehadiran', 'catatan'],
+        data.attendanceRecords.map(function(a) { return [a.id, a.date || a.tanggal || '', a.halaqohId || a.id_kelas || '', a.santriId || a.id_santri || '', a.status || a.status_kehadiran || 'H', a.notes || a.catatan || a.note || '']; }));
     }
     if (data.journalEntries) {
-      writeToSheet('4. Data_Jurnal', ['id', 'date', 'halaqohId', 'teacherId', 'teacherName', 'materi', 'tahfizhClassMaterial', 'absentSummary', 'notes'],
-        data.journalEntries.map(function(j) { return [j.id, j.date, j.halaqohId, j.teacherId, j.teacherName, j.material || j.materi, j.tahfizhClassMaterial, j.absentSummary, j.notesAndEvaluation || j.notes]; }));
+      writeToSheet('4. Data_Jurnal', ['id', 'tanggal', 'id_kelas', 'materi_pelajaran', 'catatan_dan_evaluasi', 'nama_pengajar'],
+        data.journalEntries.map(function(j) { return [j.id, j.date || j.tanggal || '', j.halaqohId || j.id_kelas || '', j.material || j.materi_pelajaran || j.materi || '', j.notesAndEvaluation || j.catatan_dan_evaluasi || j.notes || '', j.teacherName || j.nama_pengajar || '']; }));
     }
     if (data.prestasiRecords) {
-      writeToSheet('5. Data_Prestasi', ['id', 'date', 'santriId', 'halaqohId', 'type', 'tahsinMaterial', 'tahsinPageAyat', 'tahsinGrade', 'ziyadahJuz', 'ziyadahSurah', 'ziyadahAyat', 'ziyadahQuality', 'murojaahMaterial', 'murojaahQuality', 'notes', 'status'],
-        data.prestasiRecords.map(function(p) { return [p.id, p.date, p.santriId, p.halaqohId, p.type, p.tahsinMaterial, p.tahsinPageAyat, p.tahsinGrade, p.ziyadahJuz, p.ziyadahSurah, p.ziyadahAyat, p.ziyadahQuality, p.murojaahMaterial, p.murojaahQuality, p.notes, p.status || 'lulus']; }));
+      writeToSheet('5. Data_Prestasi', ['id', 'tanggal', 'id_kelas', 'id_santri', 'jenis_setoran', 'catatan', 'status', 'materi_tahsin', 'halaman_ayat_tahsin', 'nilai_tahsin', 'juz_ziyadah', 'surah_ziyadah', 'ayat_ziyadah', 'kualitas_ziyadah', 'materi_murojaah', 'ayat_murojaah', 'kualitas_murojaah'],
+        data.prestasiRecords.map(function(p) { return [p.id, p.date || p.tanggal || '', p.halaqohId || p.id_kelas || '', p.santriId || p.id_santri || '', p.type || p.jenis_setoran || 'tahsin', p.notes || p.catatan || '', p.status || 'lulus', p.tahsinMaterial || p.materi_tahsin || '', p.tahsinPageAyat || p.halaman_ayat_tahsin || '', p.tahsinGrade || p.nilai_tahsin || '', p.ziyadahJuz !== undefined ? p.ziyadahJuz : (p.juz_ziyadah !== undefined ? p.juz_ziyadah : ''), p.ziyadahSurah || p.surah_ziyadah || '', p.ziyadahAyat || p.ayat_ziyadah || '', p.ziyadahQuality || p.kualitas_ziyadah || '', p.murojaahMaterial || p.materi_murojaah || '', p.murojaahAyat || p.ayat_murojaah || '', p.murojaahQuality || p.kualitas_murojaah || '']; }));
     }
     if (data.grades) {
-      writeToSheet('6. Data_Nilai', ['id', 'date', 'halaqohId', 'santriId', 'assessmentType', 'subjectArea', 'methodKitab', 'score'],
-        data.grades.map(function(g) { return [g.id, g.date, g.halaqohId, g.santriId, g.assessmentType, g.subjectArea, g.methodKitab, g.score]; }));
+      writeToSheet('6. Data_Nilai', ['id', 'tanggal', 'id_kelas', 'id_santri', 'nilai', 'jenis_ujian', 'bidang_studi', 'metode_kitab'],
+        data.grades.map(function(g) { return [g.id, g.date || g.tanggal || '', g.halaqohId || g.id_kelas || '', g.santriId || g.id_santri || '', g.score !== undefined ? g.score : (g.nilai !== undefined ? g.nilai : 0), g.assessmentType || g.jenis_ujian || 'PTS', g.subjectArea || g.bidang_studi || 'Tahfizh', g.methodKitab || g.metode_kitab || "Al-Qur'an"]; }));
     }
     if (data.settings) {
       var cfg = data.settings;
-      writeToSheet('7. Data_Pengaturan', ['logoUrl', 'kopUrl', 'foundation', 'schoolName', 'accreditation', 'address', 'city', 'paperSize', 'paperOrientation', 'academicYear', 'headmasterName', 'headmasterNip', 'headmasterTitle', 'gradeMaxScale'],
-        [[cfg.logoUrl, cfg.kopUrl, cfg.foundation, cfg.schoolName, cfg.accreditation, cfg.address, cfg.city, cfg.paperSize, cfg.paperOrientation, cfg.academicYear, cfg.headmasterName, cfg.headmasterNip, cfg.headmasterTitle, cfg.gradeMaxScale || 100]]);
+      writeToSheet('7. Data_Pengaturan', ['id', 'url_logo', 'url_logo_yayasan', 'url_kop', 'yayasan', 'nama_sekolah', 'akreditasi', 'alamat', 'kota', 'ukuran_kertas', 'orientasi_kertas', 'tahun_ajaran', 'nama_kepala_sekolah', 'nip_kepala_sekolah', 'jabatan_kepala_sekolah', 'skala_maksimal_nilai', 'istilah_murid', 'sapaan_ortu', 'url_spreadsheet'],
+        [['default', cfg.logoUrl || cfg.url_logo || '', cfg.foundationLogoUrl || cfg.url_logo_yayasan || '', cfg.kopUrl || cfg.url_kop || '', cfg.foundation || cfg.yayasan || '', cfg.schoolName || cfg.nama_sekolah || '', cfg.accreditation || cfg.akreditasi || '', cfg.address || cfg.alamat || '', cfg.city || cfg.kota || '', cfg.paperSize || cfg.ukuran_kertas || 'A4', cfg.paperOrientation || cfg.orientasi_kertas || 'portrait', cfg.academicYear || cfg.tahun_ajaran || '', cfg.headmasterName || cfg.nama_kepala_sekolah || '', cfg.headmasterNip || cfg.nip_kepala_sekolah || '', cfg.headmasterTitle || cfg.jabatan_kepala_sekolah || '', cfg.gradeMaxScale || cfg.skala_maksimal_nilai || 100, cfg.studentTerm || cfg.istilah_murid || 'Murid', cfg.parentSalutationTerm || cfg.sapaan_ortu || 'Bapak/Ibu', cfg.spreadsheetUrl || cfg.url_spreadsheet || '']]);
     }
     if (data.gradeStandards) {
-      writeToSheet('8. Data_Standar_Nilai', ['id', 'letter', 'predicate', 'description', 'minScore'],
-        data.gradeStandards.map(function(st) { return [st.id, st.letter, st.predicate, st.description, st.minScore]; }));
+      writeToSheet('8. Data_Standar_Nilai', ['id', 'huruf', 'predikat', 'keterangan', 'nilai_minimal'],
+        data.gradeStandards.map(function(st) { return [st.id, st.letter || st.huruf || '', st.predicate || st.predikat || '', st.description || st.keterangan || '', st.minScore !== undefined ? st.minScore : (st.nilai_minimal !== undefined ? st.nilai_minimal : 0)]; }));
     }
     if (data.users) {
-      writeToSheet('9. Data_Pengguna', ['id', 'name', 'nip', 'title', 'role', 'username', 'password'],
-        data.users.map(function(u) { return [u.id, u.name, u.nip, u.title, u.role, u.username, u.password]; }));
+      writeToSheet('9. Data_Pengguna', ['id', 'nama_pengguna', 'nip', 'jabatan', 'peran', 'username', 'password'],
+        data.users.map(function(u) { return [u.id, u.name || u.nama_pengguna || '', u.nip || '', u.title || u.jabatan || '', u.role || u.peran || 'guru', u.username || '', u.password || '']; }));
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Database tersinkronisasi' }))
