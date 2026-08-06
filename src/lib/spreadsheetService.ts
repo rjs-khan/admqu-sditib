@@ -863,6 +863,7 @@ function processRawDataToPayload(raw: any, cleanUrl: string) {
         ziyadahAyat: p.ayat_ziyadah || p.ziyadah_ayat || p.ziyadahAyat ? String(p.ayat_ziyadah || p.ziyadah_ayat || p.ziyadahAyat) : undefined,
         ziyadahQuality: p.kualitas_ziyadah || p.ziyadah_quality || p.ziyadahQuality ? String(p.kualitas_ziyadah || p.ziyadah_quality || p.ziyadahQuality) : undefined,
         murojaahMaterial: p.materi_murojaah || p.murojaah_material || p.murojaahMaterial ? String(p.materi_murojaah || p.murojaah_material || p.murojaahMaterial) : undefined,
+        murojaahAyat: p.ayat_murojaah || p.murojaah_ayat || p.murojaahAyat ? String(p.ayat_murojaah || p.murojaah_ayat || p.murojaahAyat) : undefined,
         murojaahQuality: p.kualitas_murojaah || p.murojaah_quality || p.murojaahQuality ? String(p.kualitas_murojaah || p.murojaah_quality || p.murojaahQuality) : undefined,
         notes: p.catatan || p.notes ? String(p.catatan || p.notes) : undefined,
         status: (p.status as 'lulus' | 'mengulang') || 'lulus',
