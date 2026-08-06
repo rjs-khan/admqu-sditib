@@ -251,7 +251,7 @@ export const KelolaDatabaseView: React.FC<KelolaDatabaseViewProps> = ({
     },
   ];
 
-  const appScriptCode = `// KODE GOOGLE APPS SCRIPT DATABASE SINKRONISASI DUA ARAH AQU v1.3.6
+  const appScriptCode = `// KODE GOOGLE APPS SCRIPT DATABASE SINKRONISASI DUA ARAH
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
