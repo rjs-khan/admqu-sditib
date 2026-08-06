@@ -17,7 +17,7 @@ export const SpreadsheetTemplateModal: React.FC<SpreadsheetTemplateModalProps> =
   const sheetsData = [
     {
       name: '1. Data_Kelas',
-      headers: ['id', 'name', 'level', 'waGroupLink', 'createdAt'],
+      headers: ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'],
       rows: [
         ['kls-001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
         ['kls-002', 'Halaqoh An-Nur', 'Lanjut', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
@@ -25,53 +25,53 @@ export const SpreadsheetTemplateModal: React.FC<SpreadsheetTemplateModalProps> =
     },
     {
       name: '2. Data_Santri',
-      headers: ['id', 'nis', 'fullName', 'gender', 'halaqohId', 'status', 'parentWa', 'enrolledAt'],
+      headers: ['id', 'id_kelas', 'nama_lengkap', 'nis', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'status', 'tanggal_masuk', 'nama_ayah', 'nama_ibu', 'pekerjaan_ayah', 'pekerjaan_ibu', 'no_wa_ortu'],
       rows: [
-        ['str-001', '2025001', 'Ahmad Zaki Al-Farisi', 'L', 'kls-001', 'aktif', '081234567890', '2025-01-10'],
-        ['str-002', '2025002', 'Fatimah Az-Zahra', 'P', 'kls-001', 'aktif', '081987654321', '2025-01-10'],
+        ['str-001', 'kls-001', 'Ahmad Zaki Al-Farisi', '2025001', 'L', 'Bandung', '2012-05-10', 'aktif', '2025-01-10', 'Bapak Zaki', 'Ibu Zaki', 'Wiraswasta', 'Ibu Rumah Tangga', '081234567890'],
+        ['str-002', 'kls-001', 'Fatimah Az-Zahra', '2025002', 'P', 'Jakarta', '2012-08-15', 'aktif', '2025-01-10', 'Bapak Ahmad', 'Ibu Ahmad', 'PNS', 'Guru', '081987654321'],
       ],
     },
     {
       name: '3. Data_Presensi',
-      headers: ['id', 'date', 'halaqohId', 'santriId', 'status', 'note'],
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'status_kehadiran', 'catatan'],
       rows: [
         ['att-001', '2025-02-01', 'kls-001', 'str-001', 'H', 'Hadir tepat waktu'],
         ['att-002', '2025-02-01', 'kls-001', 'str-002', 'I', 'Izin acara keluarga'],
       ],
     },
     {
-      name: '4. Data_Jurnal_Mengajar',
-      headers: ['id', 'date', 'halaqohId', 'teacherId', 'teacherName', 'materi', 'tahfizhClassMaterial', 'absentSummary', 'notes'],
+      name: '4. Data_Jurnal',
+      headers: ['id', 'tanggal', 'id_kelas', 'materi_pelajaran', 'catatan_dan_evaluasi', 'nama_pengajar'],
       rows: [
-        ['jrn-001', '2025-02-01', 'kls-001', 'u-admin', 'Ustadz Abdullah, M.Ag.', 'Tajwid Mad Thabi\'i', 'Surah Al-Mulk ayat 1-10', 'H: 14, I: 1, S: 0, A: 0', 'Santri antusias'],
+        ['jrn-001', '2025-02-01', 'kls-001', "Tajwid Mad Thabi'i", 'Santri antusias', 'Ustadz Abdullah, M.Ag.'],
       ],
     },
     {
-      name: '5. Data_Kartu_Prestasi',
-      headers: ['id', 'date', 'santriId', 'halaqohId', 'type', 'tahsinMaterial', 'tahsinPageAyat', 'tahsinGrade', 'ziyadahJuz', 'ziyadahSurah', 'ziyadahAyat', 'ziyadahQuality', 'murojaahMaterial', 'murojaahQuality', 'notes', 'status'],
+      name: '5. Data_Prestasi',
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'jenis_setoran', 'catatan', 'status', 'materi_tahsin', 'halaman_ayat_tahsin', 'nilai_tahsin', 'juz_ziyadah', 'surah_ziyadah', 'ayat_ziyadah', 'kualitas_ziyadah', 'materi_murojaah', 'ayat_murojaah', 'kualitas_murojaah'],
       rows: [
-        ['prs-001', '2025-02-01', 'str-001', 'kls-001', 'tahsin', 'Jilid 4 Hal 12', 'Hal 12', 'Mumtaz (Lancar)', '', '', '', '', '', '', 'Bagus', 'lulus'],
-        ['prs-002', '2025-02-01', 'str-001', 'kls-001', 'ziyadah', '', '', '', '30', 'An-Naba', '1-20', 'Jayyid (Lancar)', '', '', 'Lancar tanpa keliru', 'lulus'],
+        ['prs-001', '2025-02-01', 'kls-001', 'str-001', 'tahsin', 'Bagus', 'lulus', 'Jilid 4 Hal 12', 'Hal 12', 'Mumtaz (Lancar)', '', '', '', '', '', '', ''],
+        ['prs-002', '2025-02-01', 'kls-001', 'str-001', 'ziyadah', 'Lancar tanpa keliru', 'lulus', '', '', '', '30', 'An-Naba', '1-20', 'Jayyid (Lancar)', '', '', ''],
       ],
     },
     {
-      name: '6. Data_Nilai_Siswa',
-      headers: ['id', 'date', 'halaqohId', 'santriId', 'assessmentType', 'subjectArea', 'methodKitab', 'score'],
+      name: '6. Data_Nilai',
+      headers: ['id', 'tanggal', 'id_kelas', 'id_santri', 'nilai', 'jenis_ujian', 'bidang_studi', 'metode_kitab'],
       rows: [
-        ['grd-001', '2025-02-15', 'kls-001', 'str-001', 'PTS', 'Tahsin', 'Al-Qur\'an', '95'],
-        ['grd-002', '2025-02-15', 'kls-001', 'str-002', 'PTS', 'Tahsin', 'Al-Qur\'an', '88'],
+        ['grd-001', '2025-02-15', 'kls-001', 'str-001', '95', 'PTS', 'Tahsin', "Al-Qur'an"],
+        ['grd-002', '2025-02-15', 'kls-001', 'str-002', '88', 'PTS', 'Tahsin', "Al-Qur'an"],
       ],
     },
     {
-      name: '7. Data_Pengaturan_Sekolah',
-      headers: ['logoUrl', 'kopUrl', 'foundation', 'schoolName', 'accreditation', 'address', 'city', 'paperSize', 'paperOrientation', 'academicYear', 'headmasterName', 'headmasterNip', 'headmasterTitle', 'gradeMaxScale'],
+      name: '7. Data_Pengaturan',
+      headers: ['id', 'url_logo', 'url_logo_yayasan', 'url_kop', 'yayasan', 'nama_sekolah', 'akreditasi', 'alamat', 'kota', 'ukuran_kertas', 'orientasi_kertas', 'tahun_ajaran', 'nama_kepala_sekolah', 'nip_kepala_sekolah', 'jabatan_kepala_sekolah', 'skala_maksimal_nilai', 'istilah_murid', 'sapaan_ortu', 'url_spreadsheet'],
       rows: [
-        ['/assets/logo.png', '', 'Yayasan Bina Insani Qur\'ani', 'SMP IT & Mahad Tahfizh AQU', 'Terakreditasi A', 'Jl. Pendidikan No. 123', 'Bandung', 'A4', 'portrait', '2025/2026', 'Dr. H. Muhammad Ridwan, M.A.', '19780512 200312 1 002', 'Kepala Sekolah', '100'],
+        ['default', '/assets/logo.png', '', '', "Yayasan Bina Insani Qur'ani", 'SMP IT & Mahad Tahfizh AQU', 'Terakreditasi A', 'Jl. Pendidikan No. 123', 'Bandung', 'A4', 'portrait', '2025/2026', 'Dr. H. Muhammad Ridwan, M.A.', '19780512 200312 1 002', 'Kepala Sekolah', '100', 'Murid', 'Bapak/Ibu', ''],
       ],
     },
     {
       name: '8. Data_Standar_Nilai',
-      headers: ['id', 'letter', 'predicate', 'description', 'minScore'],
+      headers: ['id', 'huruf', 'predikat', 'keterangan', 'nilai_minimal'],
       rows: [
         ['std-001', 'A+', 'Mumtaz', 'Sangat Baik Sekali / Perfect', '90'],
         ['std-002', 'A', 'Jayyid Jiddan', 'Baik Sekali / Sangat Lancar', '80'],
@@ -81,8 +81,8 @@ export const SpreadsheetTemplateModal: React.FC<SpreadsheetTemplateModalProps> =
       ],
     },
     {
-      name: '9. Data_Pengguna_User',
-      headers: ['id', 'name', 'nip', 'title', 'role', 'username', 'password'],
+      name: '9. Data_Pengguna',
+      headers: ['id', 'nama_pengguna', 'nip', 'jabatan', 'peran', 'username', 'password'],
       rows: [
         ['u-admin', 'Ustadz Abdullah, M.Ag.', '19850101 201001 1 001', 'Kepala Pengajar Tahfizh', 'admin', 'admin', 'admin123'],
         ['u-guru1', 'Ustadzah Siti Aminah, S.Pd.I', '19900315 201502 2 003', 'Guru Tahsin', 'guru', 'guru', 'guru123'],
