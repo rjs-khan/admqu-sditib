@@ -49,6 +49,7 @@ const COMMON_METHODS = [
   'Yanbua',
   'Qiroati',
   'Ummi',
+  'Tamhidi',
   'Lainnya',
 ];
 
