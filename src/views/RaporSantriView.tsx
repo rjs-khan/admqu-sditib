@@ -692,12 +692,72 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     return '-';
   };
 
+  const formatQualityToLetterPredicate = (val?: string | number): string => {
+    if (val === undefined || val === null || val === '') return '-';
+    const str = String(val).trim();
+    if (!str || str === '-') return '-';
+
+    // If already in "Huruf (Predikat)" format like "A (Mumtaz)" or "A+ (Mumtaz)"
+    const letterParenMatch = str.match(/^([A-Da-d][+-]?)\s*\((.+)\)$/);
+    if (letterParenMatch) {
+      const letter = letterParenMatch[1].toUpperCase();
+      const pred = letterParenMatch[2].trim();
+      return `${letter} (${pred})`;
+    }
+
+    // If in reverse "Predikat (Huruf)" format like "Mumtaz (A)" or "Jayyid Jiddan (A)"
+    const predParenMatch = str.match(/^(.+)\s*\(([A-Da-d][+-]?)\)$/);
+    if (predParenMatch) {
+      const pred = predParenMatch[1].trim();
+      const letter = predParenMatch[2].toUpperCase();
+      return `${letter} (${pred})`;
+    }
+
+    const lower = str.toLowerCase();
+
+    // Check numerical values
+    if (!isNaN(Number(str))) {
+      const num = Number(str);
+      if (num >= 90) return 'A (Mumtaz)';
+      if (num >= 80) return 'A (Jayyid Jiddan)';
+      if (num >= 70) return 'B+ (Jayyid)';
+      if (num >= 60) return 'B (Maqbul)';
+      return 'C (Rasib)';
+    }
+
+    // Check specific textual grades/predicates
+    if (lower === 'a+') return 'A+ (Mumtaz)';
+    if (lower === 'a') return 'A (Mumtaz)';
+    if (lower === 'b+') return 'B+ (Jayyid)';
+    if (lower === 'b') return 'B (Maqbul)';
+    if (lower === 'c') return 'C (Rasib)';
+    if (lower === 'd') return 'D (Rasib)';
+
+    if (lower.includes('mumtaz') || lower.includes('istimewa') || lower.includes('sangat baik sekali')) {
+      return lower.includes('a+') ? 'A+ (Mumtaz)' : 'A (Mumtaz)';
+    }
+    if (lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
+      return 'A (Jayyid Jiddan)';
+    }
+    if (lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
+      return 'B+ (Jayyid)';
+    }
+    if (lower.includes('maqbul') || lower.includes('cukup')) {
+      return 'B (Maqbul)';
+    }
+    if (lower.includes('rasib') || lower.includes('kurang') || lower.includes('mengulang') || lower.includes('ulang')) {
+      return 'C (Rasib)';
+    }
+
+    return str;
+  };
+
   const calculatePrestasiAverageQuality = (type: PrestasiType, recs: PrestasiRecord[]): string => {
     if (recs.length === 0) return '-';
     if (recs.length === 1) {
       const r = recs[0];
       const val = type === 'tahsin' ? r.tahsinGrade : type === 'ziyadah' ? r.ziyadahQuality : r.murojaahQuality;
-      return val ? String(val).toUpperCase() : '-';
+      return formatQualityToLetterPredicate(val);
     }
 
     const scores: number[] = [];
@@ -707,15 +767,15 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
       if (!lower) continue;
       if (!isNaN(Number(lower))) {
         scores.push(Number(lower));
-      } else if (lower.includes('a+') || lower.includes('mumtaz') || lower.includes('sangat baik sekali') || lower.includes('istimewa')) {
+      } else if (lower === 'a+' || lower.includes('a+') || lower.includes('mumtaz') || lower.includes('sangat baik sekali') || lower.includes('istimewa')) {
         scores.push(95);
-      } else if (lower.includes('a') || lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
+      } else if (lower === 'a' || lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
         scores.push(85);
-      } else if (lower.includes('b+') || lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
+      } else if (lower === 'b+' || lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
         scores.push(75);
-      } else if (lower.includes('b') || lower.includes('maqbul') || lower.includes('cukup')) {
+      } else if (lower === 'b' || lower.includes('maqbul') || lower.includes('cukup')) {
         scores.push(65);
-      } else if (lower.includes('c') || lower.includes('rasib') || lower.includes('kurang') || lower.includes('ulang')) {
+      } else if (lower === 'c' || lower.includes('rasib') || lower.includes('kurang') || lower.includes('ulang')) {
         scores.push(50);
       } else {
         scores.push(75);
@@ -725,19 +785,12 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     if (scores.length === 0) return '-';
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
-    if (type === 'tahsin') {
-      if (avg >= 90) return 'A+ (Mumtaz)';
-      if (avg >= 80) return 'A (Jayyid Jiddan)';
-      if (avg >= 70) return 'B+ (Jayyid)';
-      if (avg >= 60) return 'B (Maqbul)';
-      return 'C (Rasib)';
-    } else {
-      if (avg >= 90) return 'Mumtaz (A+)';
-      if (avg >= 80) return 'Jayyid Jiddan (A)';
-      if (avg >= 70) return 'Jayyid (B+)';
-      if (avg >= 60) return 'Maqbul (B)';
-      return 'Rasib (C)';
-    }
+    if (avg >= 95) return 'A+ (Mumtaz)';
+    if (avg >= 90) return 'A (Mumtaz)';
+    if (avg >= 80) return 'A (Jayyid Jiddan)';
+    if (avg >= 70) return 'B+ (Jayyid)';
+    if (avg >= 60) return 'B (Maqbul)';
+    return 'C (Rasib)';
   };
 
   // Grouped 3 activity elements for concise report printing
