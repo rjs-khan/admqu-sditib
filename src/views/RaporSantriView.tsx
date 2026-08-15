@@ -654,31 +654,87 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     (g) => String(g.santriId).trim() === String(selectedSantriId).trim() && filterByDate(g.date)
   );
 
-  // Helper for sorting assessment types: Harian -> PTS -> PAS
-  const getAssessmentRank = (typeStr?: string): number => {
-    if (!typeStr) return 99;
-    const lower = typeStr.toLowerCase();
-    if (lower.includes('harian') || lower === 'ph' || lower === 'uh') return 1;
-    if (lower.includes('pts') || lower.includes('tengah') || lower === 'uts') return 2;
-    if (lower.includes('pas') || lower.includes('akhir') || lower === 'uas' || lower === 'pat') return 3;
-    return 4;
+  // Structure all tested subjects with all evaluation types (Harian -> PTS -> PAS) per row
+  const standardAssessmentTypes = [
+    { key: 'harian', label: 'Penilaian Harian', matchTerms: ['harian', 'ph', 'uh', 'penilaian harian'] },
+    { key: 'pts', label: 'PTS', matchTerms: ['pts', 'tengah', 'uts', 'penilaian tengah semester'] },
+    { key: 'pas', label: 'PAS', matchTerms: ['pas', 'akhir', 'uas', 'pat', 'penilaian akhir semester'] },
+  ];
+
+  // Extract all distinct subject areas evaluated for the selected student
+  const distinctSubjects: string[] = [];
+  santriGrades.forEach((g) => {
+    const subj = (g.subjectArea || '').trim();
+    if (subj && !distinctSubjects.some((s) => s.toLowerCase() === subj.toLowerCase())) {
+      distinctSubjects.push(subj);
+    }
+  });
+
+  // Sort subjects: Hafalan -> Tahsin -> Doa-doa -> Materi Keislaman -> others
+  const subjectPriority: Record<string, number> = {
+    hafalan: 1,
+    tahsin: 2,
+    doa: 3,
+    'doa-doa': 3,
+    keislaman: 4,
+    'materi keislaman': 4,
   };
 
-  // Group all tested subjects together, and for each subject sort Harian -> PTS -> PAS
-  const sortedSantriGrades = [...santriGrades].sort((a, b) => {
-    // 1. Group by Subject Area (Materi / Bidang Studi)
-    const subjA = (a.subjectArea || '').trim();
-    const subjB = (b.subjectArea || '').trim();
-    const subjCompare = subjA.localeCompare(subjB, undefined, { sensitivity: 'base' });
-    if (subjCompare !== 0) return subjCompare;
+  distinctSubjects.sort((a, b) => {
+    const prioA = subjectPriority[a.toLowerCase()] || 10;
+    const prioB = subjectPriority[b.toLowerCase()] || 10;
+    if (prioA !== prioB) return prioA - prioB;
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+  });
 
-    // 2. Sort by Assessment Type: Harian -> PTS -> PAS
-    const rankA = getAssessmentRank(a.assessmentType);
-    const rankB = getAssessmentRank(b.assessmentType);
-    if (rankA !== rankB) return rankA - rankB;
+  interface GradeSummaryRow {
+    key: string;
+    subjectArea: string;
+    methodKitab: string;
+    assessmentType: string;
+    score: string | number;
+  }
 
-    // 3. Sort by Date
-    return (a.date || '').localeCompare(b.date || '');
+  const gradeSummaryRows: GradeSummaryRow[] = [];
+
+  distinctSubjects.forEach((subj) => {
+    const subjGrades = santriGrades.filter(
+      (g) => (g.subjectArea || '').trim().toLowerCase() === subj.toLowerCase()
+    );
+    const defaultMethod = subjGrades[0]?.methodKitab || (subj.toLowerCase().includes('tahsin') ? 'Tilawati' : "Al-Qur'an");
+
+    // Standard evaluations: Harian, PTS, PAS
+    standardAssessmentTypes.forEach((evalDef) => {
+      const match = subjGrades.find((g) => {
+        const t = (g.assessmentType || '').trim().toLowerCase();
+        return evalDef.matchTerms.some((term) => t === term || t.includes(term));
+      });
+
+      gradeSummaryRows.push({
+        key: `${subj}_${evalDef.key}`,
+        subjectArea: subj,
+        methodKitab: match?.methodKitab || defaultMethod,
+        assessmentType: evalDef.label,
+        score: match && match.score !== undefined && match.score !== null ? match.score : '-',
+      });
+    });
+
+    // Custom evaluations for this subject if any
+    subjGrades.forEach((g, customIdx) => {
+      const t = (g.assessmentType || '').trim().toLowerCase();
+      const isStandard = standardAssessmentTypes.some((ev) =>
+        ev.matchTerms.some((term) => t === term || t.includes(term))
+      );
+      if (!isStandard) {
+        gradeSummaryRows.push({
+          key: `${subj}_custom_${g.id || customIdx}`,
+          subjectArea: subj,
+          methodKitab: g.methodKitab || defaultMethod,
+          assessmentType: g.assessmentType || 'Lainnya',
+          score: g.score !== undefined && g.score !== null ? g.score : '-',
+        });
+      }
+    });
   });
 
   // Helper formatters for Prestasi summary in Rapor Santri
@@ -1077,7 +1133,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
           </table>
         </div>
 
-        {/* Section C: Nilai Ujian (PTS / PAS) */}
+        {/* Section C: Nilai Ujian & Evaluasi (Harian, PTS, PAS per Materi) */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
             C. REKAPITULASI NILAI UJIAN & EVALUASI
@@ -1088,25 +1144,25 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                 <th className="border border-slate-900 px-3 py-2 w-10">No</th>
                 <th className="border border-slate-900 px-3 py-2 text-left">Materi / Bidang Studi</th>
                 <th className="border border-slate-900 px-3 py-2 text-left">Metode / Kitab</th>
-                <th className="border border-slate-900 px-3 py-2 w-28">Jenis Evaluasi</th>
+                <th className="border border-slate-900 px-3 py-2 w-32">Jenis Evaluasi</th>
                 <th className="border border-slate-900 px-3 py-2 w-20">Nilai Angka</th>
               </tr>
             </thead>
             <tbody>
-              {sortedSantriGrades.length === 0 ? (
+              {gradeSummaryRows.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-4 text-slate-500 italic border border-slate-900">
                     Belum ada data nilai ujian terdata.
                   </td>
                 </tr>
               ) : (
-                sortedSantriGrades.map((g, idx) => (
-                  <tr key={g.id} className="text-center">
+                gradeSummaryRows.map((row, idx) => (
+                  <tr key={row.key} className="text-center">
                     <td className="border border-slate-900 px-2 py-1.5 font-mono">{idx + 1}</td>
-                    <td className="border border-slate-900 px-3 py-1.5 text-left font-bold">{g.subjectArea}</td>
-                    <td className="border border-slate-900 px-3 py-1.5 text-left">{g.methodKitab}</td>
-                    <td className="border border-slate-900 px-2 py-1.5">{g.assessmentType}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-bold text-sm">{g.score}</td>
+                    <td className="border border-slate-900 px-3 py-1.5 text-left font-bold">{row.subjectArea}</td>
+                    <td className="border border-slate-900 px-3 py-1.5 text-left">{row.methodKitab}</td>
+                    <td className="border border-slate-900 px-2 py-1.5 font-medium">{row.assessmentType}</td>
+                    <td className="border border-slate-900 px-2 py-1.5 font-bold text-sm">{row.score}</td>
                   </tr>
                 ))
               )}
