@@ -130,7 +130,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </form>
 
           <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 text-center text-xs text-slate-600 space-y-0.5">
-            <div className="font-bold text-slate-700">AQU v1.4.0</div>
+            <div className="font-bold text-slate-700">AQU v1.4.1</div>
             <div className="text-[11px] text-slate-500">
               Dikembangkan oleh <span className="font-semibold text-slate-700">Rajes Peggy</span> dengan <span className="font-semibold text-slate-700">AI Studio</span>
             </div>
