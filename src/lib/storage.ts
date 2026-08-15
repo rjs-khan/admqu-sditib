@@ -202,7 +202,17 @@ export function savePrestasi(prestasi: PrestasiRecord[]): void {
 
 // Grades
 export function getGrades(): GradeRecord[] {
-  return getItem<GradeRecord[]>(KEYS.GRADES, initialGrades);
+  const grades = getItem<GradeRecord[] | null>(KEYS.GRADES, null);
+  if (!grades || grades.length === 0) {
+    saveGrades(initialGrades);
+    return initialGrades;
+  }
+  // If stored grades is old 1-item initial data (from prior app version), merge or reset with initialGrades
+  if (grades.length === 1 && grades[0].id === 'grd-0001' && grades[0].subjectArea === 'Hafalan' && grades[0].assessmentType === 'PTS') {
+    saveGrades(initialGrades);
+    return initialGrades;
+  }
+  return grades;
 }
 
 export function saveGrades(grades: GradeRecord[]): void {
