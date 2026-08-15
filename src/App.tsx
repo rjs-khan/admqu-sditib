@@ -841,6 +841,7 @@ export default function App() {
               attendanceRecords={attendanceRecords}
               prestasiRecords={prestasiRecords}
               grades={grades}
+              gradeStandards={gradeStandards}
               settings={settings}
               activeUser={activeUser}
               onSaveSettings={handleSaveSettings}
