@@ -509,6 +509,24 @@ export default function App() {
     });
   };
 
+  const handleDeleteGradeItem = (id: string) => {
+    setGrades((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      storage.saveGrades(updated);
+      syncState({ grades: updated });
+      return updated;
+    });
+  };
+
+  const handleUpdateGradeItem = (updatedItem: GradeRecord) => {
+    setGrades((prev) => {
+      const updated = prev.map((item) => (item.id === updatedItem.id ? updatedItem : item));
+      storage.saveGrades(updated);
+      syncState({ grades: updated });
+      return updated;
+    });
+  };
+
   const handleSaveGrades = (records: GradeRecord[]) => {
     setGrades((prev) => {
       const map = new Map<string, GradeRecord>();
@@ -797,6 +815,8 @@ export default function App() {
               settings={settings}
               gradeStandards={gradeStandards}
               onSaveGrades={handleSaveGrades}
+              onUpdateGrade={handleUpdateGradeItem}
+              onDeleteGrade={handleDeleteGradeItem}
             />
           )}
 
