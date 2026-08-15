@@ -5,6 +5,7 @@ import {
   Santri,
   AttendanceRecord,
   PrestasiRecord,
+  PrestasiType,
   GradeRecord,
   SchoolSettings,
   User,
@@ -653,6 +654,152 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     (g) => String(g.santriId).trim() === String(selectedSantriId).trim() && filterByDate(g.date)
   );
 
+  // Helper formatters for Prestasi summary in Rapor Santri
+  const formatSinglePrestasiMaterial = (p: PrestasiRecord): string => {
+    if (p.type === 'tahsin') {
+      if (!p.tahsinMaterial && !p.tahsinPageAyat) return '-';
+      const mat = p.tahsinMaterial || '';
+      const pageAyat = p.tahsinPageAyat ? `(${p.tahsinPageAyat})` : '';
+      return [mat, pageAyat].filter(Boolean).join(' ');
+    }
+    if (p.type === 'ziyadah') {
+      const parts: string[] = [];
+      if (p.ziyadahJuz !== undefined && p.ziyadahJuz !== null && String(p.ziyadahJuz) !== '') {
+        parts.push(`Juz ${p.ziyadahJuz}`);
+      }
+      if (p.ziyadahSurah) {
+        parts.push(p.ziyadahSurah);
+      }
+      const base = parts.join(' - ');
+      const ayat = p.ziyadahAyat ? `(${p.ziyadahAyat})` : '';
+      const res = [base, ayat].filter(Boolean).join(' ');
+      return res || '-';
+    }
+    if (p.type === 'murojaah') {
+      if (!p.murojaahMaterial && !p.murojaahAyat) return '-';
+      const mat = p.murojaahMaterial || '';
+      let ayatStr = '';
+      if (p.murojaahAyat) {
+        const lowerAyat = p.murojaahAyat.toLowerCase();
+        if (lowerAyat.startsWith('ayat') || lowerAyat.startsWith('hal') || lowerAyat.startsWith('juz')) {
+          ayatStr = `(${p.murojaahAyat})`;
+        } else {
+          ayatStr = `(Ayat ${p.murojaahAyat})`;
+        }
+      }
+      return [mat, ayatStr].filter(Boolean).join(' ') || '-';
+    }
+    return '-';
+  };
+
+  const calculatePrestasiAverageQuality = (type: PrestasiType, recs: PrestasiRecord[]): string => {
+    if (recs.length === 0) return '-';
+    if (recs.length === 1) {
+      const r = recs[0];
+      const val = type === 'tahsin' ? r.tahsinGrade : type === 'ziyadah' ? r.ziyadahQuality : r.murojaahQuality;
+      return val ? String(val).toUpperCase() : '-';
+    }
+
+    const scores: number[] = [];
+    for (const r of recs) {
+      const val = (type === 'tahsin' ? r.tahsinGrade : type === 'ziyadah' ? r.ziyadahQuality : r.murojaahQuality) || '';
+      const lower = String(val).trim().toLowerCase();
+      if (!lower) continue;
+      if (!isNaN(Number(lower))) {
+        scores.push(Number(lower));
+      } else if (lower.includes('a+') || lower.includes('mumtaz') || lower.includes('sangat baik sekali') || lower.includes('istimewa')) {
+        scores.push(95);
+      } else if (lower.includes('a') || lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
+        scores.push(85);
+      } else if (lower.includes('b+') || lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
+        scores.push(75);
+      } else if (lower.includes('b') || lower.includes('maqbul') || lower.includes('cukup')) {
+        scores.push(65);
+      } else if (lower.includes('c') || lower.includes('rasib') || lower.includes('kurang') || lower.includes('ulang')) {
+        scores.push(50);
+      } else {
+        scores.push(75);
+      }
+    }
+
+    if (scores.length === 0) return '-';
+    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+    if (type === 'tahsin') {
+      if (avg >= 90) return 'A+ (Mumtaz)';
+      if (avg >= 80) return 'A (Jayyid Jiddan)';
+      if (avg >= 70) return 'B+ (Jayyid)';
+      if (avg >= 60) return 'B (Maqbul)';
+      return 'C (Rasib)';
+    } else {
+      if (avg >= 90) return 'Mumtaz (A+)';
+      if (avg >= 80) return 'Jayyid Jiddan (A)';
+      if (avg >= 70) return 'Jayyid (B+)';
+      if (avg >= 60) return 'Maqbul (B)';
+      return 'Rasib (C)';
+    }
+  };
+
+  // Grouped 3 activity elements for concise report printing
+  const prestasiActivityTypes: { key: PrestasiType; label: string }[] = [
+    { key: 'tahsin', label: 'TAHSIN' },
+    { key: 'ziyadah', label: 'ZIYADAH' },
+    { key: 'murojaah', label: "MUROJA'AH" },
+  ];
+
+  const prestasiSummaryRows = prestasiActivityTypes.map((act) => {
+    const actRecords = santriPrestasi
+      .filter((p) => p.type === act.key)
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    let periode = '-';
+    if (actRecords.length === 0) {
+      if (fromDate && toDate) {
+        periode = `${fromDate} s/d ${toDate}`;
+      } else if (fromDate) {
+        periode = `Dari ${fromDate}`;
+      } else if (toDate) {
+        periode = `Sampai ${toDate}`;
+      } else {
+        periode = '-';
+      }
+    } else if (actRecords.length === 1) {
+      periode = actRecords[0].date;
+    } else {
+      const minD = actRecords[0].date;
+      const maxD = actRecords[actRecords.length - 1].date;
+      periode = minD === maxD ? minD : `${minD} s/d ${maxD}`;
+    }
+
+    let materiRange = '-';
+    if (actRecords.length === 0) {
+      materiRange = '-';
+    } else if (actRecords.length === 1) {
+      materiRange = formatSinglePrestasiMaterial(actRecords[0]);
+    } else {
+      const firstMat = formatSinglePrestasiMaterial(actRecords[0]);
+      const lastMat = formatSinglePrestasiMaterial(actRecords[actRecords.length - 1]);
+      if (firstMat === '-' && lastMat === '-') {
+        materiRange = '-';
+      } else if (firstMat === lastMat) {
+        materiRange = firstMat;
+      } else {
+        materiRange = `${firstMat} s/d ${lastMat}`;
+      }
+    }
+
+    const avgQuality = calculatePrestasiAverageQuality(act.key, actRecords);
+
+    return {
+      key: act.key,
+      label: act.label,
+      periode,
+      materiRange,
+      avgQuality,
+      recordCount: actRecords.length,
+    };
+  });
+
   // Stats calculation
   const isH = (st?: string) => st === 'H' || st?.toLowerCase() === 'hadir';
   const isI = (st?: string) => st === 'I' || st?.toLowerCase() === 'izin';
@@ -822,40 +969,30 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
             <thead>
               <tr className="bg-slate-100 font-bold text-center border-b border-slate-900">
                 <th className="border border-slate-900 px-3 py-2 w-10">No</th>
-                <th className="border border-slate-900 px-3 py-2 w-24">Tanggal</th>
-                <th className="border border-slate-900 px-3 py-2 w-24">Kegiatan</th>
+                <th className="border border-slate-900 px-3 py-2 w-44">Tanggal</th>
+                <th className="border border-slate-900 px-3 py-2 w-28">Kegiatan</th>
                 <th className="border border-slate-900 px-3 py-2 text-left">Materi / Surah / Ayat</th>
-                <th className="border border-slate-900 px-3 py-2 w-28">Nilai / Kualitas</th>
-                <th className="border border-slate-900 px-3 py-2 w-24">Status</th>
+                <th className="border border-slate-900 px-3 py-2 w-36">Nilai / Kualitas</th>
               </tr>
             </thead>
             <tbody>
-              {santriPrestasi.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-4 text-slate-500 italic border border-slate-900">
-                    Belum ada data setoran kartu prestasi.
+              {prestasiSummaryRows.map((row, idx) => (
+                <tr key={row.key} className="text-center">
+                  <td className="border border-slate-900 px-2 py-2 font-mono">{idx + 1}</td>
+                  <td className="border border-slate-900 px-2 py-2 font-mono text-[11px] whitespace-nowrap">
+                    {row.periode}
+                  </td>
+                  <td className="border border-slate-900 px-2 py-2 font-bold uppercase">
+                    {row.label}
+                  </td>
+                  <td className="border border-slate-900 px-3 py-2 text-left font-medium">
+                    {row.materiRange}
+                  </td>
+                  <td className="border border-slate-900 px-2 py-2 font-bold uppercase text-center">
+                    {row.avgQuality}
                   </td>
                 </tr>
-              ) : (
-                santriPrestasi.map((p, idx) => (
-                  <tr key={p.id} className="text-center">
-                    <td className="border border-slate-900 px-2 py-1.5 font-mono">{idx + 1}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-mono">{p.date}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-bold uppercase">{p.type}</td>
-                    <td className="border border-slate-900 px-3 py-1.5 text-left font-medium">
-                      {p.type === 'tahsin' && `${p.tahsinMaterial} (${p.tahsinPageAyat || '-'})`}
-                      {p.type === 'ziyadah' && `Juz ${p.ziyadahJuz} - ${p.ziyadahSurah} (${p.ziyadahAyat || 'Semua'})`}
-                      {p.type === 'murojaah' && `${p.murojaahMaterial}${p.murojaahAyat ? ` (${p.murojaahAyat.toLowerCase().startsWith('ayat') || p.murojaahAyat.toLowerCase().startsWith('hal') ? p.murojaahAyat : `Ayat ${p.murojaahAyat}`})` : ''}`}
-                    </td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-bold uppercase">
-                      {p.type === 'tahsin' ? p.tahsinGrade : p.type === 'ziyadah' ? p.ziyadahQuality : p.murojaahQuality}
-                    </td>
-                    <td className="border border-slate-900 px-2 py-1.5 capitalize font-semibold">
-                      {p.status}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
