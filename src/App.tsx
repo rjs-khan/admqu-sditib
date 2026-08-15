@@ -510,9 +510,25 @@ export default function App() {
   };
 
   const handleSaveGrades = (records: GradeRecord[]) => {
-    setGrades(records);
-    storage.saveGrades(records);
-    syncState({ grades: records });
+    setGrades((prev) => {
+      const map = new Map<string, GradeRecord>();
+      (prev || []).forEach((g) => {
+        if (g && g.santriId) {
+          const key = `${g.santriId}_${(g.subjectArea || '').toLowerCase().trim()}_${(g.assessmentType || '').toLowerCase().trim()}`;
+          map.set(key, g);
+        }
+      });
+      records.forEach((g) => {
+        if (g && g.santriId) {
+          const key = `${g.santriId}_${(g.subjectArea || '').toLowerCase().trim()}_${(g.assessmentType || '').toLowerCase().trim()}`;
+          map.set(key, g);
+        }
+      });
+      const updated = Array.from(map.values());
+      storage.saveGrades(updated);
+      syncState({ grades: updated });
+      return updated;
+    });
   };
 
   const handleSaveSettings = (updated: SchoolSettings) => {
