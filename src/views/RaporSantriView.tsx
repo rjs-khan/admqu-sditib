@@ -687,94 +687,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     return a.localeCompare(b, undefined, { sensitivity: 'base' });
   });
 
-  interface GradeSummaryRow {
-    key: string;
-    subjectArea: string;
-    methodKitab: string;
-    assessmentType: string;
-    score: string | number;
-  }
-
-  const gradeSummaryRows: GradeSummaryRow[] = [];
-
-  distinctSubjects.forEach((subj) => {
-    const subjGrades = santriGrades.filter(
-      (g) => (g.subjectArea || '').trim().toLowerCase() === subj.toLowerCase()
-    );
-    const defaultMethod = subjGrades[0]?.methodKitab || (subj.toLowerCase().includes('tahsin') ? 'Tilawati' : "Al-Qur'an");
-
-    // Standard evaluations: Harian, PTS, PAS
-    standardAssessmentTypes.forEach((evalDef) => {
-      const match = subjGrades.find((g) => {
-        const t = (g.assessmentType || '').trim().toLowerCase();
-        return evalDef.matchTerms.some((term) => t === term || t.includes(term));
-      });
-
-      gradeSummaryRows.push({
-        key: `${subj}_${evalDef.key}`,
-        subjectArea: subj,
-        methodKitab: match?.methodKitab || defaultMethod,
-        assessmentType: evalDef.label,
-        score: match && match.score !== undefined && match.score !== null ? match.score : '-',
-      });
-    });
-
-    // Custom evaluations for this subject if any
-    subjGrades.forEach((g, customIdx) => {
-      const t = (g.assessmentType || '').trim().toLowerCase();
-      const isStandard = standardAssessmentTypes.some((ev) =>
-        ev.matchTerms.some((term) => t === term || t.includes(term))
-      );
-      if (!isStandard) {
-        gradeSummaryRows.push({
-          key: `${subj}_custom_${g.id || customIdx}`,
-          subjectArea: subj,
-          methodKitab: g.methodKitab || defaultMethod,
-          assessmentType: g.assessmentType || 'Lainnya',
-          score: g.score !== undefined && g.score !== null ? g.score : '-',
-        });
-      }
-    });
-  });
-
-  // Helper formatters for Prestasi summary in Rapor Santri
-  const formatSinglePrestasiMaterial = (p: PrestasiRecord): string => {
-    if (p.type === 'tahsin') {
-      if (!p.tahsinMaterial && !p.tahsinPageAyat) return '-';
-      const mat = p.tahsinMaterial || '';
-      const pageAyat = p.tahsinPageAyat ? `(${p.tahsinPageAyat})` : '';
-      return [mat, pageAyat].filter(Boolean).join(' ');
-    }
-    if (p.type === 'ziyadah') {
-      const parts: string[] = [];
-      if (p.ziyadahJuz !== undefined && p.ziyadahJuz !== null && String(p.ziyadahJuz) !== '') {
-        parts.push(`Juz ${p.ziyadahJuz}`);
-      }
-      if (p.ziyadahSurah) {
-        parts.push(p.ziyadahSurah);
-      }
-      const base = parts.join(' - ');
-      const ayat = p.ziyadahAyat ? `(${p.ziyadahAyat})` : '';
-      const res = [base, ayat].filter(Boolean).join(' ');
-      return res || '-';
-    }
-    if (p.type === 'murojaah') {
-      if (!p.murojaahMaterial && !p.murojaahAyat) return '-';
-      const mat = p.murojaahMaterial || '';
-      let ayatStr = '';
-      if (p.murojaahAyat) {
-        const lowerAyat = p.murojaahAyat.toLowerCase();
-        if (lowerAyat.startsWith('ayat') || lowerAyat.startsWith('hal') || lowerAyat.startsWith('juz')) {
-          ayatStr = `(${p.murojaahAyat})`;
-        } else {
-          ayatStr = `(Ayat ${p.murojaahAyat})`;
-        }
-      }
-      return [mat, ayatStr].filter(Boolean).join(' ') || '-';
-    }
-    return '-';
-  };
-
+  // Helper formatters for Prestasi and Grade summary in Rapor Santri
   const formatQualityToLetterPredicate = (val?: string | number): string => {
     if (val === undefined || val === null || val === '') return '-';
     const str = String(val).trim();
@@ -833,6 +746,102 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     }
 
     return str;
+  };
+
+  interface GradeSummaryRow {
+    key: string;
+    subjectArea: string;
+    methodKitab: string;
+    assessmentType: string;
+    score: string | number;
+    quality: string;
+  }
+
+  const gradeSummaryRows: GradeSummaryRow[] = [];
+
+  distinctSubjects.forEach((subj) => {
+    const subjGrades = santriGrades.filter(
+      (g) => (g.subjectArea || '').trim().toLowerCase() === subj.toLowerCase()
+    );
+    const defaultMethod = subjGrades[0]?.methodKitab || (subj.toLowerCase().includes('tahsin') ? 'Tilawati' : "Al-Qur'an");
+
+    // Standard evaluations: Harian, PTS, PAS
+    standardAssessmentTypes.forEach((evalDef) => {
+      const match = subjGrades.find((g) => {
+        const t = (g.assessmentType || '').trim().toLowerCase();
+        return evalDef.matchTerms.some((term) => t === term || t.includes(term));
+      });
+
+      const scoreVal = match && match.score !== undefined && match.score !== null ? match.score : '-';
+      const qualityVal = scoreVal !== '-' ? formatQualityToLetterPredicate(scoreVal) : '-';
+
+      gradeSummaryRows.push({
+        key: `${subj}_${evalDef.key}`,
+        subjectArea: subj,
+        methodKitab: match?.methodKitab || defaultMethod,
+        assessmentType: evalDef.label,
+        score: scoreVal,
+        quality: qualityVal,
+      });
+    });
+
+    // Custom evaluations for this subject if any
+    subjGrades.forEach((g, customIdx) => {
+      const t = (g.assessmentType || '').trim().toLowerCase();
+      const isStandard = standardAssessmentTypes.some((ev) =>
+        ev.matchTerms.some((term) => t === term || t.includes(term))
+      );
+      if (!isStandard) {
+        const scoreVal = g.score !== undefined && g.score !== null ? g.score : '-';
+        const qualityVal = scoreVal !== '-' ? formatQualityToLetterPredicate(scoreVal) : '-';
+        gradeSummaryRows.push({
+          key: `${subj}_custom_${g.id || customIdx}`,
+          subjectArea: subj,
+          methodKitab: g.methodKitab || defaultMethod,
+          assessmentType: g.assessmentType || 'Lainnya',
+          score: scoreVal,
+          quality: qualityVal,
+        });
+      }
+    });
+  });
+
+  // Helper formatters for Prestasi summary in Rapor Santri
+  const formatSinglePrestasiMaterial = (p: PrestasiRecord): string => {
+    if (p.type === 'tahsin') {
+      if (!p.tahsinMaterial && !p.tahsinPageAyat) return '-';
+      const mat = p.tahsinMaterial || '';
+      const pageAyat = p.tahsinPageAyat ? `(${p.tahsinPageAyat})` : '';
+      return [mat, pageAyat].filter(Boolean).join(' ');
+    }
+    if (p.type === 'ziyadah') {
+      const parts: string[] = [];
+      if (p.ziyadahJuz !== undefined && p.ziyadahJuz !== null && String(p.ziyadahJuz) !== '') {
+        parts.push(`Juz ${p.ziyadahJuz}`);
+      }
+      if (p.ziyadahSurah) {
+        parts.push(p.ziyadahSurah);
+      }
+      const base = parts.join(' - ');
+      const ayat = p.ziyadahAyat ? `(${p.ziyadahAyat})` : '';
+      const res = [base, ayat].filter(Boolean).join(' ');
+      return res || '-';
+    }
+    if (p.type === 'murojaah') {
+      if (!p.murojaahMaterial && !p.murojaahAyat) return '-';
+      const mat = p.murojaahMaterial || '';
+      let ayatStr = '';
+      if (p.murojaahAyat) {
+        const lowerAyat = p.murojaahAyat.toLowerCase();
+        if (lowerAyat.startsWith('ayat') || lowerAyat.startsWith('hal') || lowerAyat.startsWith('juz')) {
+          ayatStr = `(${p.murojaahAyat})`;
+        } else {
+          ayatStr = `(Ayat ${p.murojaahAyat})`;
+        }
+      }
+      return [mat, ayatStr].filter(Boolean).join(' ') || '-';
+    }
+    return '-';
   };
 
   const calculatePrestasiAverageQuality = (type: PrestasiType, recs: PrestasiRecord[]): string => {
@@ -1146,12 +1155,13 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                 <th className="border border-slate-900 px-3 py-2 text-left">Metode / Kitab</th>
                 <th className="border border-slate-900 px-3 py-2 w-32">Jenis Evaluasi</th>
                 <th className="border border-slate-900 px-3 py-2 w-20">Nilai Angka</th>
+                <th className="border border-slate-900 px-3 py-2 w-32 text-center">Kualitas</th>
               </tr>
             </thead>
             <tbody>
               {gradeSummaryRows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-4 text-slate-500 italic border border-slate-900">
+                  <td colSpan={6} className="text-center py-4 text-slate-500 italic border border-slate-900">
                     Belum ada data nilai ujian terdata.
                   </td>
                 </tr>
@@ -1163,6 +1173,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                     <td className="border border-slate-900 px-3 py-1.5 text-left">{row.methodKitab}</td>
                     <td className="border border-slate-900 px-2 py-1.5 font-medium">{row.assessmentType}</td>
                     <td className="border border-slate-900 px-2 py-1.5 font-bold text-sm">{row.score}</td>
+                    <td className="border border-slate-900 px-2 py-1.5 font-bold">{row.quality}</td>
                   </tr>
                 ))
               )}
