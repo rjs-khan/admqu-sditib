@@ -748,22 +748,27 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     return str;
   };
 
-  interface GradeSummaryRow {
+  interface GradeSummaryEvaluation {
     key: string;
-    subjectArea: string;
     methodKitab: string;
     assessmentType: string;
     score: string | number;
     quality: string;
   }
 
-  const gradeSummaryRows: GradeSummaryRow[] = [];
+  interface GradeSummaryGroup {
+    subjectArea: string;
+    evaluations: GradeSummaryEvaluation[];
+  }
+
+  const gradeSummaryGroups: GradeSummaryGroup[] = [];
 
   distinctSubjects.forEach((subj) => {
     const subjGrades = santriGrades.filter(
       (g) => (g.subjectArea || '').trim().toLowerCase() === subj.toLowerCase()
     );
     const defaultMethod = subjGrades[0]?.methodKitab || (subj.toLowerCase().includes('tahsin') ? 'Tilawati' : "Al-Qur'an");
+    const evaluations: GradeSummaryEvaluation[] = [];
 
     // Standard evaluations: Harian, PTS, PAS
     standardAssessmentTypes.forEach((evalDef) => {
@@ -775,9 +780,8 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
       const scoreVal = match && match.score !== undefined && match.score !== null ? match.score : '-';
       const qualityVal = scoreVal !== '-' ? formatQualityToLetterPredicate(scoreVal) : '-';
 
-      gradeSummaryRows.push({
+      evaluations.push({
         key: `${subj}_${evalDef.key}`,
-        subjectArea: subj,
         methodKitab: match?.methodKitab || defaultMethod,
         assessmentType: evalDef.label,
         score: scoreVal,
@@ -794,9 +798,8 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
       if (!isStandard) {
         const scoreVal = g.score !== undefined && g.score !== null ? g.score : '-';
         const qualityVal = scoreVal !== '-' ? formatQualityToLetterPredicate(scoreVal) : '-';
-        gradeSummaryRows.push({
+        evaluations.push({
           key: `${subj}_custom_${g.id || customIdx}`,
-          subjectArea: subj,
           methodKitab: g.methodKitab || defaultMethod,
           assessmentType: g.assessmentType || 'Lainnya',
           score: scoreVal,
@@ -804,6 +807,13 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
         });
       }
     });
+
+    if (evaluations.length > 0) {
+      gradeSummaryGroups.push({
+        subjectArea: subj,
+        evaluations,
+      });
+    }
   });
 
   // Helper formatters for Prestasi summary in Rapor Santri
@@ -1117,7 +1127,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                 <th className="border border-slate-900 px-3 py-2 w-44">Tanggal</th>
                 <th className="border border-slate-900 px-3 py-2 w-28">Kegiatan</th>
                 <th className="border border-slate-900 px-3 py-2 text-left">Materi / Surah / Ayat</th>
-                <th className="border border-slate-900 px-3 py-2 w-36">Nilai / Kualitas</th>
+                <th className="border border-slate-900 px-3 py-2 w-36">Nilai / Predikat</th>
               </tr>
             </thead>
             <tbody>
@@ -1155,27 +1165,43 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
                 <th className="border border-slate-900 px-3 py-2 text-left">Metode / Kitab</th>
                 <th className="border border-slate-900 px-3 py-2 w-32">Jenis Evaluasi</th>
                 <th className="border border-slate-900 px-3 py-2 w-20">Nilai Angka</th>
-                <th className="border border-slate-900 px-3 py-2 w-32 text-center">Kualitas</th>
+                <th className="border border-slate-900 px-3 py-2 w-32 text-center">Nilai / Predikat</th>
               </tr>
             </thead>
             <tbody>
-              {gradeSummaryRows.length === 0 ? (
+              {gradeSummaryGroups.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-4 text-slate-500 italic border border-slate-900">
                     Belum ada data nilai ujian terdata.
                   </td>
                 </tr>
               ) : (
-                gradeSummaryRows.map((row, idx) => (
-                  <tr key={row.key} className="text-center">
-                    <td className="border border-slate-900 px-2 py-1.5 font-mono">{idx + 1}</td>
-                    <td className="border border-slate-900 px-3 py-1.5 text-left font-bold">{row.subjectArea}</td>
-                    <td className="border border-slate-900 px-3 py-1.5 text-left">{row.methodKitab}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-medium">{row.assessmentType}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-bold text-sm">{row.score}</td>
-                    <td className="border border-slate-900 px-2 py-1.5 font-bold">{row.quality}</td>
-                  </tr>
-                ))
+                gradeSummaryGroups.map((group, groupIdx) =>
+                  group.evaluations.map((row, evalIdx) => (
+                    <tr key={row.key} className="text-center">
+                      {evalIdx === 0 && (
+                        <>
+                          <td
+                            rowSpan={group.evaluations.length}
+                            className="border border-slate-900 px-2 py-1.5 font-mono font-bold align-middle bg-white"
+                          >
+                            {groupIdx + 1}
+                          </td>
+                          <td
+                            rowSpan={group.evaluations.length}
+                            className="border border-slate-900 px-3 py-1.5 text-left font-bold align-middle bg-white"
+                          >
+                            {group.subjectArea}
+                          </td>
+                        </>
+                      )}
+                      <td className="border border-slate-900 px-3 py-1.5 text-left">{row.methodKitab}</td>
+                      <td className="border border-slate-900 px-2 py-1.5 font-medium">{row.assessmentType}</td>
+                      <td className="border border-slate-900 px-2 py-1.5 font-bold text-sm">{row.score}</td>
+                      <td className="border border-slate-900 px-2 py-1.5 font-bold">{row.quality}</td>
+                    </tr>
+                  ))
+                )
               )}
             </tbody>
           </table>
