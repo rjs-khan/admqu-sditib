@@ -42,14 +42,18 @@ interface NilaiSiswaViewProps {
   onDeleteGrade?: (id: string) => void;
 }
 
-const COMMON_METHODS = [
+const PRESET_METHODS = [
   "Al-Qur'an",
   'Iqro',
   'Tilawati',
   'Yanbua',
   'Qiroati',
   'Ummi',
-  'Tamhidi',
+  'Tamhid',
+];
+
+const ALL_METHOD_OPTIONS = [
+  ...PRESET_METHODS,
   'Lainnya',
 ];
 
@@ -86,11 +90,13 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
   // Local state maps per student
   const [localScores, setLocalScores] = useState<Record<string, number | string>>({});
   const [localMethods, setLocalMethods] = useState<Record<string, string>>({});
+  const [customMethodActive, setCustomMethodActive] = useState<Record<string, boolean>>({});
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [savedRowNotice, setSavedRowNotice] = useState<string | null>(null);
 
   // --- HISTORY MODE STATES ---
-  const [historyHalaqohFilter, setHistoryHalaqohFilter] = useState<string>('all');
+  // Default to selected class to prevent misclicking student from other classes
+  const [historyHalaqohFilter, setHistoryHalaqohFilter] = useState<string>(halaqohs[0]?.id || 'all');
   const [historySantriFilter, setHistorySantriFilter] = useState<string>('all');
   const [historySubjectFilter, setHistorySubjectFilter] = useState<string>('all');
   const [historyAssessmentFilter, setHistoryAssessmentFilter] = useState<string>('all');
@@ -101,6 +107,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
   const [editDate, setEditDate] = useState<string>('');
   const [editSubjectArea, setEditSubjectArea] = useState<string>('');
   const [editMethodKitab, setEditMethodKitab] = useState<string>('');
+  const [editIsCustomMethod, setEditIsCustomMethod] = useState<boolean>(false);
   const [editAssessmentType, setEditAssessmentType] = useState<AssessmentType>('PTS');
   const [editScore, setEditScore] = useState<number | string>(0);
 
@@ -116,10 +123,27 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
 
   const effectiveSubject = subjectPreset === 'Lainnya' ? customSubject : subjectPreset;
 
+  // Sync halaqoh selection when changed
+  const handleSelectHalaqoh = (hId: string) => {
+    setSelectedHalaqohId(hId);
+    setHistoryHalaqohFilter(hId);
+    setHistorySantriFilter('all');
+  };
+
+  const handleTabChange = (tab: 'input' | 'history') => {
+    setActiveTab(tab);
+    if (tab === 'history') {
+      if (selectedHalaqohId && historyHalaqohFilter === 'all') {
+        setHistoryHalaqohFilter(selectedHalaqohId);
+      }
+    }
+  };
+
   // Load existing grades and methods when filters change in Input mode
   useEffect(() => {
     const scoreMap: Record<string, number | string> = {};
     const methodMap: Record<string, string> = {};
+    const customMap: Record<string, boolean> = {};
 
     activeStudents.forEach((s) => {
       // Find existing grade for this student, halaqoh, assessmentType, and subject
@@ -137,14 +161,17 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
       // Default method: from existing record, or default for subject (Tahsin -> Tilawati, others -> Al-Qur'an)
       if (existing && existing.methodKitab) {
         methodMap[s.id] = existing.methodKitab;
+        customMap[s.id] = !PRESET_METHODS.includes(existing.methodKitab);
       } else {
         const defaultForSubj = effectiveSubject.toLowerCase().includes('tahsin') ? 'Tilawati' : "Al-Qur'an";
         methodMap[s.id] = defaultForSubj;
+        customMap[s.id] = false;
       }
     });
 
     setLocalScores(scoreMap);
     setLocalMethods(methodMap);
+    setCustomMethodActive(customMap);
   }, [selectedHalaqohId, assessmentType, effectiveSubject, grades, activeStudents, maxScale]);
 
   // Handle score change for a specific student
@@ -177,10 +204,18 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
   const handleApplyBatchMethod = () => {
     if (!batchMethod) return;
     const updated: Record<string, string> = {};
+    const updatedCustoms: Record<string, boolean> = {};
     activeStudents.forEach((s) => {
-      updated[s.id] = batchMethod;
+      if (batchMethod === 'Lainnya') {
+        updated[s.id] = '';
+        updatedCustoms[s.id] = true;
+      } else {
+        updated[s.id] = batchMethod;
+        updatedCustoms[s.id] = false;
+      }
     });
     setLocalMethods(updated);
+    setCustomMethodActive(updatedCustoms);
   };
 
   // Save all grades in the input table
@@ -193,7 +228,8 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
           : scoreVal === ''
           ? 0
           : Number(scoreVal) || 0;
-      const method = localMethods[s.id] || "Al-Qur'an";
+      const rawMethod = localMethods[s.id];
+      const method = (rawMethod && rawMethod.trim()) ? rawMethod.trim() : (customMethodActive[s.id] ? 'Lainnya' : "Al-Qur'an");
 
       return {
         id: generateCleanId('grd', grades, idx),
@@ -221,7 +257,8 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
         : scoreVal === ''
         ? 0
         : Number(scoreVal) || 0;
-    const method = localMethods[santriId] || "Al-Qur'an";
+    const rawMethod = localMethods[santriId];
+    const method = (rawMethod && rawMethod.trim()) ? rawMethod.trim() : (customMethodActive[santriId] ? 'Lainnya' : "Al-Qur'an");
 
     const singleRecord: GradeRecord = {
       id: generateCleanId('grd', grades, 0),
@@ -242,7 +279,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
   // --- HISTORY FILTERING & LISTING ---
   const filteredGrades = useMemo(() => {
     return (grades || []).filter((g) => {
-      // Halaqoh filter
+      // Halaqoh filter (Scoped by selected class)
       if (historyHalaqohFilter !== 'all' && g.halaqohId !== historyHalaqohFilter) {
         return false;
       }
@@ -302,7 +339,9 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
     setEditingGrade(grade);
     setEditDate(grade.date || todayStr);
     setEditSubjectArea(grade.subjectArea || 'Tahsin');
-    setEditMethodKitab(grade.methodKitab || "Al-Qur'an");
+    const m = grade.methodKitab || "Al-Qur'an";
+    setEditMethodKitab(m);
+    setEditIsCustomMethod(!PRESET_METHODS.includes(m));
     setEditAssessmentType(grade.assessmentType || 'PTS');
     setEditScore(grade.score);
   };
@@ -319,12 +358,13 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
         ? 0
         : Number(editScore) || 0;
     const clampedScore = Math.min(maxScale, Math.max(0, numScore));
+    const finalMethod = (editMethodKitab && editMethodKitab.trim()) ? editMethodKitab.trim() : (editIsCustomMethod ? 'Lainnya' : "Al-Qur'an");
 
     const updated: GradeRecord = {
       ...editingGrade,
       date: editDate,
       subjectArea: editSubjectArea,
-      methodKitab: editMethodKitab,
+      methodKitab: finalMethod,
       assessmentType: editAssessmentType,
       score: clampedScore,
     };
@@ -371,7 +411,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
         <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
           <button
             id="tab-input-nilai"
-            onClick={() => setActiveTab('input')}
+            onClick={() => handleTabChange('input')}
             className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               activeTab === 'input'
                 ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
@@ -383,7 +423,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
           </button>
           <button
             id="tab-riwayat-nilai"
-            onClick={() => setActiveTab('history')}
+            onClick={() => handleTabChange('history')}
             className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               activeTab === 'history'
                 ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
@@ -430,7 +470,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
               <select
                 id="nilai-halaqoh"
                 value={selectedHalaqohId}
-                onChange={(e) => setSelectedHalaqohId(e.target.value)}
+                onChange={(e) => handleSelectHalaqoh(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               >
                 {halaqohs.map((h) => (
@@ -500,11 +540,12 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                   onChange={(e) => setBatchMethod(e.target.value)}
                   className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
                 >
-                  {COMMON_METHODS.filter((m) => m !== 'Lainnya').map((m) => (
+                  {PRESET_METHODS.map((m) => (
                     <option key={m} value={m}>
                       {m}
                     </option>
                   ))}
+                  <option value="Lainnya">Lainnya (Tulis Sendiri)</option>
                 </select>
                 <button
                   type="button"
@@ -518,7 +559,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
               </div>
 
               <div className="text-slate-500 italic">
-                Setiap {studentTermLower} dapat disesuaikan metode acuannya masing-masing pada tabel di bawah.
+                Pilih "Lainnya" jika ingin menuliskan metode / jilid kitab sendiri untuk masing-masing {studentTermLower}.
               </div>
             </div>
           </div>
@@ -539,13 +580,13 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                   Lembar Input Nilai — {assessmentType} — {effectiveSubject}
                 </span>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  Metode/kitab dapat disesuaikan per individu {studentTermLower}
+                  Metode/kitab dapat disesuaikan per individu {studentTermLower} (pilihan "Lainnya" dapat diketik bebas)
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <span className="text-xs text-emerald-700 font-bold">
-                  {activeStudents.length} {studentTerm}
+                  {activeStudents.length} {studentTerm} ({halaqohs.find(h => h.id === selectedHalaqohId)?.name || 'Kelas'})
                 </span>
                 <button
                   id="btn-simpan-nilai-top"
@@ -564,7 +605,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                   <tr>
                     <th className="px-3 py-3 w-12 text-center">No</th>
                     <th className="px-4 py-3 min-w-[200px]">Nama Lengkap & NIS</th>
-                    <th className="px-4 py-3 min-w-[220px]">
+                    <th className="px-4 py-3 min-w-[240px]">
                       Metode / Kitab Acuan Murid
                     </th>
                     <th className="px-4 py-3 text-center min-w-[140px]">
@@ -593,7 +634,7 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                           : Number(rawVal) || 0;
                       const predInfo = getGradePredicateInfo(numericVal, gradeStandards, maxScale);
                       const currentMethod = localMethods[s.id] || "Al-Qur'an";
-                      const isCustom = !COMMON_METHODS.includes(currentMethod);
+                      const isCustom = customMethodActive[s.id] || !PRESET_METHODS.includes(currentMethod);
 
                       return (
                         <tr key={s.id} className="hover:bg-slate-50 transition-colors">
@@ -609,30 +650,42 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                               <select
                                 value={isCustom ? 'Lainnya' : currentMethod}
                                 onChange={(e) => {
-                                  if (e.target.value === 'Lainnya') {
-                                    handleMethodChange(s.id, currentMethod || '');
+                                  const val = e.target.value;
+                                  if (val === 'Lainnya') {
+                                    setCustomMethodActive((prev) => ({ ...prev, [s.id]: true }));
+                                    if (PRESET_METHODS.includes(localMethods[s.id])) {
+                                      handleMethodChange(s.id, '');
+                                    }
                                   } else {
-                                    handleMethodChange(s.id, e.target.value);
+                                    setCustomMethodActive((prev) => ({ ...prev, [s.id]: false }));
+                                    handleMethodChange(s.id, val);
                                   }
                                 }}
                                 className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                               >
-                                {COMMON_METHODS.map((m) => (
+                                {PRESET_METHODS.map((m) => (
                                   <option key={m} value={m}>
                                     {m}
                                   </option>
                                 ))}
+                                <option value="Lainnya">Lainnya (Tulis Sendiri)</option>
                               </select>
 
-                              {/* Custom input or detailed book/jilid */}
-                              {(isCustom || currentMethod === 'Lainnya') && (
-                                <input
-                                  type="text"
-                                  value={isCustom ? currentMethod : ''}
-                                  onChange={(e) => handleMethodChange(s.id, e.target.value)}
-                                  placeholder="Contoh: Tilawati Jilid 2 / Iqro 3"
-                                  className="w-full px-2.5 py-1 bg-amber-50/50 border border-amber-300 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                                />
+                              {/* Custom input with free text writing when Lainnya is selected */}
+                              {isCustom && (
+                                <div className="space-y-1 animate-in fade-in duration-150">
+                                  <input
+                                    type="text"
+                                    value={localMethods[s.id] || ''}
+                                    onChange={(e) => handleMethodChange(s.id, e.target.value)}
+                                    placeholder="Tulis metode/kitab (cth: Tilawati Jilid 2)..."
+                                    className="w-full px-2.5 py-1.5 bg-amber-50/70 border border-amber-300 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    autoFocus={!localMethods[s.id]}
+                                  />
+                                  <div className="text-[10px] text-amber-700 font-medium">
+                                    ✍️ Tulis nama metode / jilid kitab sendiri
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </td>
@@ -702,10 +755,24 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MODE 2: RIWAYAT & KELOLA NILAI (EDIT & HAPUS PER MURID)                   */}
+      {/* MODE 2: RIWAYAT & KELOLA NILAI (DITAMPILKAN BERDASARKAN KELAS TERPILIH)  */}
       {/* ========================================================================= */}
       {activeTab === 'history' && (
         <div className="space-y-4">
+          {/* Active Class Scope Banner */}
+          <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-emerald-950 shadow-xs">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>
+                Menampilkan Riwayat Kelas: <strong className="text-emerald-800 text-sm">{halaqohs.find((h) => h.id === historyHalaqohFilter)?.name || (historyHalaqohFilter === 'all' ? 'Semua Kelas' : 'Kelas Terpilih')}</strong>
+              </span>
+            </div>
+            <span className="text-[11px] text-emerald-700 bg-emerald-100/90 px-2.5 py-1 rounded-lg font-semibold inline-flex items-center gap-1.5 self-start sm:self-auto">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Tampilan dikhususkan per kelas untuk menghindari salah klik nama murid</span>
+            </span>
+          </div>
+
           {/* Filter Bar */}
           <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -743,8 +810,15 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                 </label>
                 <select
                   value={historyHalaqohFilter}
-                  onChange={(e) => setHistoryHalaqohFilter(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setHistoryHalaqohFilter(val);
+                    setHistorySantriFilter('all');
+                    if (val !== 'all') {
+                      setSelectedHalaqohId(val);
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="all">Semua Kelas</option>
                   {halaqohs.map((h) => (
@@ -755,10 +829,10 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                 </select>
               </div>
 
-              {/* Santri Filter */}
+              {/* Santri Filter (Restricted to selected class to avoid wrong student click) */}
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Pilih {studentTerm}:
+                  Pilih {studentTerm} (Kelas Ini):
                 </label>
                 <select
                   value={historySantriFilter}
@@ -991,14 +1065,47 @@ export const NilaiSiswaView: React.FC<NilaiSiswaViewProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Metode / Kitab Acuan:
                 </label>
-                <input
-                  type="text"
-                  value={editMethodKitab}
-                  onChange={(e) => setEditMethodKitab(e.target.value)}
-                  placeholder="Contoh: Tilawati Jilid 2, Iqro 4, Al-Qur'an..."
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
-                  required
-                />
+                <div className="space-y-1.5">
+                  <select
+                    value={editIsCustomMethod ? 'Lainnya' : (PRESET_METHODS.includes(editMethodKitab) ? editMethodKitab : 'Lainnya')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'Lainnya') {
+                        setEditIsCustomMethod(true);
+                        if (PRESET_METHODS.includes(editMethodKitab)) {
+                          setEditMethodKitab('');
+                        }
+                      } else {
+                        setEditIsCustomMethod(false);
+                        setEditMethodKitab(val);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+                  >
+                    {PRESET_METHODS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                    <option value="Lainnya">Lainnya (Tulis Sendiri)</option>
+                  </select>
+
+                  {(editIsCustomMethod || !PRESET_METHODS.includes(editMethodKitab)) && (
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        value={editMethodKitab}
+                        onChange={(e) => setEditMethodKitab(e.target.value)}
+                        placeholder="Tulis metode/kitab (cth: Tilawati Jilid 2, Iqro 4)..."
+                        className="w-full px-3 py-2 bg-amber-50/70 border border-amber-300 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                        autoFocus={!editMethodKitab}
+                      />
+                      <div className="text-[10px] text-amber-700 font-medium">
+                        ✍️ Tulis nama metode / jilid kitab sendiri
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Jenis Penilaian */}
