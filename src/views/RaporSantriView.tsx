@@ -654,6 +654,33 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     (g) => String(g.santriId).trim() === String(selectedSantriId).trim() && filterByDate(g.date)
   );
 
+  // Helper for sorting assessment types: Harian -> PTS -> PAS
+  const getAssessmentRank = (typeStr?: string): number => {
+    if (!typeStr) return 99;
+    const lower = typeStr.toLowerCase();
+    if (lower.includes('harian') || lower === 'ph' || lower === 'uh') return 1;
+    if (lower.includes('pts') || lower.includes('tengah') || lower === 'uts') return 2;
+    if (lower.includes('pas') || lower.includes('akhir') || lower === 'uas' || lower === 'pat') return 3;
+    return 4;
+  };
+
+  // Group all tested subjects together, and for each subject sort Harian -> PTS -> PAS
+  const sortedSantriGrades = [...santriGrades].sort((a, b) => {
+    // 1. Group by Subject Area (Materi / Bidang Studi)
+    const subjA = (a.subjectArea || '').trim();
+    const subjB = (b.subjectArea || '').trim();
+    const subjCompare = subjA.localeCompare(subjB, undefined, { sensitivity: 'base' });
+    if (subjCompare !== 0) return subjCompare;
+
+    // 2. Sort by Assessment Type: Harian -> PTS -> PAS
+    const rankA = getAssessmentRank(a.assessmentType);
+    const rankB = getAssessmentRank(b.assessmentType);
+    if (rankA !== rankB) return rankA - rankB;
+
+    // 3. Sort by Date
+    return (a.date || '').localeCompare(b.date || '');
+  });
+
   // Helper formatters for Prestasi summary in Rapor Santri
   const formatSinglePrestasiMaterial = (p: PrestasiRecord): string => {
     if (p.type === 'tahsin') {
@@ -1066,14 +1093,14 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {santriGrades.length === 0 ? (
+              {sortedSantriGrades.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-4 text-slate-500 italic border border-slate-900">
                     Belum ada data nilai ujian terdata.
                   </td>
                 </tr>
               ) : (
-                santriGrades.map((g, idx) => (
+                sortedSantriGrades.map((g, idx) => (
                   <tr key={g.id} className="text-center">
                     <td className="border border-slate-900 px-2 py-1.5 font-mono">{idx + 1}</td>
                     <td className="border border-slate-900 px-3 py-1.5 text-left font-bold">{g.subjectArea}</td>
