@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getStudentTerm, getStudentTermLower } from '../lib/studentTerm';
+import { initialGradeStandards } from '../data/initialData';
 import {
   Halaqoh,
   Santri,
@@ -7,6 +8,7 @@ import {
   PrestasiRecord,
   PrestasiType,
   GradeRecord,
+  GradeStandard,
   SchoolSettings,
   User,
   PaperSize,
@@ -42,8 +44,10 @@ interface RaporSantriViewProps {
   attendanceRecords: AttendanceRecord[];
   prestasiRecords: PrestasiRecord[];
   grades: GradeRecord[];
+  gradeStandards?: GradeStandard[];
   settings: SchoolSettings;
   activeUser: User;
+  onSaveSettings?: (newSettings: SchoolSettings) => void;
 }
 
 // Helper for Indonesian Date Formatting (e.g., Bandung, 2 Januari 2026)
@@ -66,6 +70,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
   attendanceRecords,
   prestasiRecords,
   grades,
+  gradeStandards,
   settings,
   activeUser,
 }) => {
@@ -73,6 +78,17 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
   const term = getStudentTerm(settings);
   const termLower = getStudentTermLower(settings);
   const termUpper = term.toUpperCase();
+
+  // Resolve active standards to use from settings/props or initial data fallback
+  const standardsToUse =
+    gradeStandards && gradeStandards.length > 0
+      ? gradeStandards
+      : initialGradeStandards;
+
+  // Sort standards by minScore descending
+  const sortedStandards = [...standardsToUse].sort(
+    (a, b) => (Number(b.minScore) || 0) - (Number(a.minScore) || 0)
+  );
 
   // 9.1 Pilihan halaqoh
   const [selectedHalaqohId, setSelectedHalaqohId] = useState<string>(halaqohs[0]?.id || '');
@@ -687,62 +703,96 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     return a.localeCompare(b, undefined, { sensitivity: 'base' });
   });
 
+  // Format helper for GradeStandard to Letter & Predicate text
+  const formatStandardLabel = (st: GradeStandard): string => {
+    if (!st) return '-';
+    const letter = (st.letter || '').trim();
+    const pred = (st.predicate || '').trim();
+
+    // Extract primary word if predicate has parentheses e.g. "Mumtaz (Sangat Baik Sekali)" -> "Mumtaz"
+    const parenMatch = pred.match(/^([^(]+)\s*\((.+)\)$/);
+    const primaryPred = parenMatch ? parenMatch[1].trim() : pred;
+
+    if (letter && primaryPred) {
+      if (primaryPred.toLowerCase().startsWith(letter.toLowerCase())) {
+        return primaryPred;
+      }
+      return `${letter} (${primaryPred})`;
+    }
+    return letter || primaryPred || '-';
+  };
+
+  // Find standard for a numeric score (handles 0-10 or 0-100 scale)
+  const findStandardForScore = (num: number): GradeStandard => {
+    if (sortedStandards.length === 0) {
+      return initialGradeStandards[0];
+    }
+    const maxScale = settings.gradeMaxScale || 100;
+    const maxStandardMinScore = Math.max(
+      ...sortedStandards.map((s) => Number(s.minScore) || 0)
+    );
+    const effectiveScore = maxScale === 10 && maxStandardMinScore > 10 ? num * 10 : num;
+
+    const matched = sortedStandards.find(
+      (st) => effectiveScore >= (Number(st.minScore) || 0)
+    );
+    return matched || sortedStandards[sortedStandards.length - 1];
+  };
+
+  // Find standard for textual grade or quality (e.g. from Kartu Prestasi)
+  const findStandardForText = (text: string): GradeStandard | undefined => {
+    const clean = text.trim();
+    if (!clean || clean === '-') return undefined;
+
+    // 1. Exact match with letter or predicate
+    const exact = sortedStandards.find(
+      (st) =>
+        (st.letter || '').toLowerCase() === clean.toLowerCase() ||
+        (st.predicate || '').toLowerCase() === clean.toLowerCase()
+    );
+    if (exact) return exact;
+
+    // 2. Match letter extracted from "A (Mumtaz)" or "Mumtaz (A)"
+    const letterMatch = clean.match(/^([A-Da-d][+-]?)\s*\(/) || clean.match(/\(\s*([A-Da-d][+-]?)\s*\)$/);
+    if (letterMatch) {
+      const l = letterMatch[1].toUpperCase();
+      const matchByLetter = sortedStandards.find((st) => (st.letter || '').toUpperCase() === l);
+      if (matchByLetter) return matchByLetter;
+    }
+
+    // 3. Match predicate primary words
+    const cleanLower = clean.toLowerCase();
+    const matched = sortedStandards.find((st) => {
+      const stLetter = (st.letter || '').toLowerCase();
+      const stPred = (st.predicate || '').toLowerCase();
+      const stPrimary = (stPred.split('(')[0] || '').trim();
+      return (
+        cleanLower === stLetter ||
+        cleanLower.includes(stPred) ||
+        stPred.includes(cleanLower) ||
+        (stPrimary && cleanLower.includes(stPrimary)) ||
+        (stPrimary && stPrimary.includes(cleanLower))
+      );
+    });
+    return matched;
+  };
+
   // Helper formatters for Prestasi and Grade summary in Rapor Santri
   const formatQualityToLetterPredicate = (val?: string | number): string => {
     if (val === undefined || val === null || val === '') return '-';
     const str = String(val).trim();
     if (!str || str === '-') return '-';
 
-    // If already in "Huruf (Predikat)" format like "A (Mumtaz)" or "A+ (Mumtaz)"
-    const letterParenMatch = str.match(/^([A-Da-d][+-]?)\s*\((.+)\)$/);
-    if (letterParenMatch) {
-      const letter = letterParenMatch[1].toUpperCase();
-      const pred = letterParenMatch[2].trim();
-      return `${letter} (${pred})`;
-    }
-
-    // If in reverse "Predikat (Huruf)" format like "Mumtaz (A)" or "Jayyid Jiddan (A)"
-    const predParenMatch = str.match(/^(.+)\s*\(([A-Da-d][+-]?)\)$/);
-    if (predParenMatch) {
-      const pred = predParenMatch[1].trim();
-      const letter = predParenMatch[2].toUpperCase();
-      return `${letter} (${pred})`;
-    }
-
-    const lower = str.toLowerCase();
-
-    // Check numerical values
+    // If numerical value (e.g. Exam score 80, 70, 95)
     if (!isNaN(Number(str))) {
-      const num = Number(str);
-      if (num >= 90) return 'A (Mumtaz)';
-      if (num >= 80) return 'A (Jayyid Jiddan)';
-      if (num >= 70) return 'B+ (Jayyid)';
-      if (num >= 60) return 'B (Maqbul)';
-      return 'C (Rasib)';
+      const st = findStandardForScore(Number(str));
+      return st ? formatStandardLabel(st) : str;
     }
 
-    // Check specific textual grades/predicates
-    if (lower === 'a+') return 'A+ (Mumtaz)';
-    if (lower === 'a') return 'A (Mumtaz)';
-    if (lower === 'b+') return 'B+ (Jayyid)';
-    if (lower === 'b') return 'B (Maqbul)';
-    if (lower === 'c') return 'C (Rasib)';
-    if (lower === 'd') return 'D (Rasib)';
-
-    if (lower.includes('mumtaz') || lower.includes('istimewa') || lower.includes('sangat baik sekali')) {
-      return lower.includes('a+') ? 'A+ (Mumtaz)' : 'A (Mumtaz)';
-    }
-    if (lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
-      return 'A (Jayyid Jiddan)';
-    }
-    if (lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
-      return 'B+ (Jayyid)';
-    }
-    if (lower.includes('maqbul') || lower.includes('cukup')) {
-      return 'B (Maqbul)';
-    }
-    if (lower.includes('rasib') || lower.includes('kurang') || lower.includes('mengulang') || lower.includes('ulang')) {
-      return 'C (Rasib)';
+    // If textual grade / predicate from Kartu Prestasi or input
+    const matchedSt = findStandardForText(str);
+    if (matchedSt) {
+      return formatStandardLabel(matchedSt);
     }
 
     return str;
@@ -865,34 +915,30 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
     const scores: number[] = [];
     for (const r of recs) {
       const val = (type === 'tahsin' ? r.tahsinGrade : type === 'ziyadah' ? r.ziyadahQuality : r.murojaahQuality) || '';
-      const lower = String(val).trim().toLowerCase();
-      if (!lower) continue;
-      if (!isNaN(Number(lower))) {
-        scores.push(Number(lower));
-      } else if (lower === 'a+' || lower.includes('a+') || lower.includes('mumtaz') || lower.includes('sangat baik sekali') || lower.includes('istimewa')) {
-        scores.push(95);
-      } else if (lower === 'a' || lower.includes('jayyid jiddan') || lower.includes('sangat baik') || lower.includes('sangat lancar')) {
-        scores.push(85);
-      } else if (lower === 'b+' || lower.includes('jayyid') || lower.includes('baik') || lower.includes('lancar')) {
-        scores.push(75);
-      } else if (lower === 'b' || lower.includes('maqbul') || lower.includes('cukup')) {
-        scores.push(65);
-      } else if (lower === 'c' || lower.includes('rasib') || lower.includes('kurang') || lower.includes('ulang')) {
-        scores.push(50);
+      const str = String(val).trim();
+      if (!str || str === '-') continue;
+
+      if (!isNaN(Number(str))) {
+        scores.push(Number(str));
       } else {
-        scores.push(75);
+        const matchedSt = findStandardForText(str);
+        if (matchedSt) {
+          const idx = sortedStandards.findIndex((s) => s.id === matchedSt.id);
+          const currMin = Number(matchedSt.minScore) || 0;
+          if (idx === 0) {
+            scores.push(Math.min(100, currMin + 5));
+          } else {
+            const prevMin = Number(sortedStandards[idx - 1].minScore) || 100;
+            scores.push(Math.round((currMin + prevMin) / 2));
+          }
+        }
       }
     }
 
     if (scores.length === 0) return '-';
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-
-    if (avg >= 95) return 'A+ (Mumtaz)';
-    if (avg >= 90) return 'A (Mumtaz)';
-    if (avg >= 80) return 'A (Jayyid Jiddan)';
-    if (avg >= 70) return 'B+ (Jayyid)';
-    if (avg >= 60) return 'B (Maqbul)';
-    return 'C (Rasib)';
+    const finalStandard = findStandardForScore(avg);
+    return finalStandard ? formatStandardLabel(finalStandard) : '-';
   };
 
   // Grouped 3 activity elements for concise report printing
