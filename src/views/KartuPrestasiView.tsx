@@ -131,6 +131,7 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
 
   // Modal History State
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyFilterType, setHistoryFilterType] = useState<'all' | PrestasiType>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State for 6.3.4.1 Tahsin
@@ -220,13 +221,21 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
   const selectedSantri = (santris || []).find((s) => s.id === selectedSantriId);
   const selectedHalaqoh = (halaqohs || []).find((h) => h.id === selectedHalaqohId);
 
-  // Filter records for selected santri
-  const santriRecords = (prestasiRecords || []).filter((r) => r.santriId === selectedSantriId);
+  // Filter and sort records for selected santri from newest date to oldest
+  const santriRecords = (prestasiRecords || [])
+    .filter((r) => r.santriId === selectedSantriId)
+    .sort((a, b) => {
+      const dateA = a.date || '';
+      const dateB = b.date || '';
+      const dateCmp = dateB.localeCompare(dateA);
+      if (dateCmp !== 0) return dateCmp;
+      return (b.id || '').localeCompare(a.id || '');
+    });
 
-  // 6.3.1 Summary of latest achievements per type
-  const latestTahsin = santriRecords.filter((r) => r.type === 'tahsin').sort((a, b) => b.date.localeCompare(a.date))[0];
-  const latestZiyadah = santriRecords.filter((r) => r.type === 'ziyadah').sort((a, b) => b.date.localeCompare(a.date))[0];
-  const latestMurojaah = santriRecords.filter((r) => r.type === 'murojaah').sort((a, b) => b.date.localeCompare(a.date))[0];
+  // 6.3.1 Summary of latest achievements per type (santriRecords is already sorted newest first)
+  const latestTahsin = santriRecords.find((r) => r.type === 'tahsin');
+  const latestZiyadah = santriRecords.find((r) => r.type === 'ziyadah');
+  const latestMurojaah = santriRecords.find((r) => r.type === 'murojaah');
 
   // WhatsApp Notification Modal State
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
@@ -1015,62 +1024,165 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
 
       {/* 6.3.3 Modal History / Riwayat Setoran */}
       {isHistoryModalOpen && selectedSantri && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in zoom-in duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
-              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <History className="w-5 h-5 text-amber-600" />
-                <span>Riwayat Setoran - {selectedSantri.fullName}</span>
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <History className="w-5 h-5 text-amber-600" />
+                  <span>Riwayat Setoran - {selectedSantri.fullName}</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Diurutkan otomatis dari tanggal setoran terbaru ({santriRecords.length} total setoran)
+                </p>
+              </div>
               <button
-                onClick={() => setIsHistoryModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer"
+                onClick={() => {
+                  setIsHistoryModalOpen(false);
+                  setHistoryFilterType('all');
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
+                title="Tutup Modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-5 max-h-[70vh] overflow-y-auto space-y-3">
-              {santriRecords.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-8">Belum ada riwayat setoran.</p>
-              ) : (
-                santriRecords.map((r) => (
-                  <div key={r.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                          r.type === 'tahsin' ? 'bg-emerald-100 text-emerald-800' :
-                          r.type === 'ziyadah' ? 'bg-amber-100 text-amber-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {r.type}
-                        </span>
-                        <span className="text-xs font-mono text-slate-500">{r.date}</span>
-                        {r.type === 'tahsin' && r.tahsinGrade && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-bold">
-                            Nilai: {r.tahsinGrade}
-                          </span>
-                        )}
-                        {r.type === 'ziyadah' && r.ziyadahQuality && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-bold">
-                            {formatQualityText(r.ziyadahQuality)}
-                          </span>
-                        )}
-                        {r.type === 'murojaah' && r.murojaahQuality && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-bold">
-                            {formatQualityText(r.murojaahQuality)}
-                          </span>
-                        )}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold capitalize ${r.status === 'lanjut' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-                          {r.status}
-                        </span>
+            {/* Filter Tabs */}
+            <div className="px-5 py-2.5 bg-slate-100/60 border-b border-slate-200 flex flex-wrap items-center gap-2 shrink-0">
+              <span className="text-xs font-semibold text-slate-500 mr-1">Filter:</span>
+              <button
+                type="button"
+                onClick={() => setHistoryFilterType('all')}
+                className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+                  historyFilterType === 'all'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
+                }`}
+              >
+                Semua ({santriRecords.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilterType('tahsin')}
+                className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+                  historyFilterType === 'tahsin'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
+                }`}
+              >
+                Tahsin ({santriRecords.filter((r) => r.type === 'tahsin').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilterType('ziyadah')}
+                className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+                  historyFilterType === 'ziyadah'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'
+                }`}
+              >
+                Ziyadah ({santriRecords.filter((r) => r.type === 'ziyadah').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilterType('murojaah')}
+                className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+                  historyFilterType === 'murojaah'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-white text-blue-700 hover:bg-blue-50 border border-blue-200'
+                }`}
+              >
+                Murojaah ({santriRecords.filter((r) => r.type === 'murojaah').length})
+              </button>
+            </div>
+
+            {/* List Body */}
+            <div className="p-5 overflow-y-auto space-y-3 grow">
+              {(() => {
+                const filtered = santriRecords.filter(
+                  (r) => historyFilterType === 'all' || r.type === historyFilterType
+                );
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-slate-400 space-y-2">
+                      <History className="w-8 h-8 mx-auto text-slate-300" />
+                      <p className="text-xs">
+                        {santriRecords.length === 0
+                          ? 'Belum ada riwayat setoran terdata.'
+                          : 'Tidak ada data setoran untuk kategori yang dipilih.'}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return filtered.map((r, idx) => (
+                  <div
+                    key={r.id}
+                    className="p-4 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl flex items-center justify-between gap-4 transition-all shadow-2xs"
+                  >
+                    <div className="flex items-start gap-3 grow">
+                      <div className="w-7 h-7 rounded-lg bg-slate-200/80 text-slate-700 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                        {idx + 1}
                       </div>
-                      <div className="text-sm font-bold text-slate-800">
-                        {r.type === 'tahsin' && `${r.tahsinMaterial} (${r.tahsinPageAyat || '-'})`}
-                        {r.type === 'ziyadah' && `Juz ${r.ziyadahJuz} - ${r.ziyadahSurah} (${r.ziyadahAyat || 'Semua'})`}
-                        {r.type === 'murojaah' && `${r.murojaahMaterial}${r.murojaahAyat ? ` (Ayat: ${r.murojaahAyat})` : ''}`}
+
+                      <div className="space-y-1 grow">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                              r.type === 'tahsin'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : r.type === 'ziyadah'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}
+                          >
+                            {r.type === 'ziyadah' ? 'Ziyadah (Hafalan Baru)' : r.type}
+                          </span>
+
+                          <span className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-200">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            <span>{r.date}</span>
+                          </span>
+
+                          {r.type === 'tahsin' && r.tahsinGrade && (
+                            <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-800 rounded font-bold">
+                              Nilai: {r.tahsinGrade}
+                            </span>
+                          )}
+                          {r.type === 'ziyadah' && r.ziyadahQuality && (
+                            <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-800 rounded font-bold">
+                              Kualitas: {formatQualityText(r.ziyadahQuality)}
+                            </span>
+                          )}
+                          {r.type === 'murojaah' && r.murojaahQuality && (
+                            <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-800 rounded font-bold">
+                              Kualitas: {formatQualityText(r.murojaahQuality)}
+                            </span>
+                          )}
+
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-bold capitalize ${
+                              r.status === 'lanjut'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {r.status === 'lanjut' ? '✓ Lanjut' : '↺ Mengulang'}
+                          </span>
+                        </div>
+
+                        <div className="text-sm font-bold text-slate-800 pt-0.5">
+                          {r.type === 'tahsin' && `${r.tahsinMaterial} (${r.tahsinPageAyat || '-'})`}
+                          {r.type === 'ziyadah' &&
+                            `Juz ${r.ziyadahJuz} - ${r.ziyadahSurah} (${r.ziyadahAyat ? `Ayat: ${r.ziyadahAyat}` : 'Semua Ayat'})`}
+                          {r.type === 'murojaah' &&
+                            `${r.murojaahMaterial}${r.murojaahAyat ? ` (Ayat: ${r.murojaahAyat})` : ''}`}
+                        </div>
+
+                        {r.notes && <p className="text-xs text-slate-500 italic">Catatan: "{r.notes}"</p>}
                       </div>
-                      {r.notes && <p className="text-xs text-slate-500 italic">"{r.notes}"</p>}
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
@@ -1095,8 +1207,8 @@ export const KartuPrestasiView: React.FC<KartuPrestasiViewProps> = ({
                       </button>
                     </div>
                   </div>
-                ))
-              )}
+                ));
+              })()}
             </div>
           </div>
         </div>
