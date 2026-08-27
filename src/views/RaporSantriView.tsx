@@ -1262,7 +1262,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
             </div>
             <div className="mt-8">
               <p className="font-bold underline uppercase break-words">{settings.headmasterName || 'Dr. H. Muhammad Ridwan, M.A.'}</p>
-              <p className="font-mono text-[11px]">NIP: {settings.headmasterNip || '-'}</p>
+              <p className="font-mono text-[11px]">NIPK: {settings.headmasterNip || '-'}</p>
             </div>
           </div>
 
@@ -1273,7 +1273,7 @@ export const RaporSantriView: React.FC<RaporSantriViewProps> = ({
             </div>
             <div className="mt-8">
               <p className="font-bold underline uppercase break-words">{activeUser.name}</p>
-              <p className="font-mono text-[11px]">NIP: {activeUser.nip || '-'}</p>
+              <p className="font-mono text-[11px]">NIPK: {activeUser.nip || '-'}</p>
             </div>
           </div>
         </div>
