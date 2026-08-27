@@ -46,6 +46,15 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Synchronize local states whenever activeUser updates from any source
+  React.useEffect(() => {
+    setProfileName(activeUser.name || '');
+    setProfileNip(activeUser.nip || '');
+    setProfileTitle(activeUser.title || "Guru Qur'an / Pengajar Halaqoh");
+    setCurrentUsername(activeUser.username);
+    setNewUsername(activeUser.username);
+  }, [activeUser]);
+
   // 11.3 Admin User Management Modal & State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -123,19 +132,28 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
     if (!(uName || '').trim() || !(uUsername || '').trim()) return;
 
     if (editingUserId) {
-      const updated = users.map((u) =>
-        u.id === editingUserId
-          ? {
-              ...u,
-              name: (uName || '').trim(),
-              nip: (uNip || '').trim(),
-              title: (uTitle || '').trim(),
-              role: uRole,
-              username: (uUsername || '').trim(),
-              password: uPassword || u.password,
-            }
-          : u
-      );
+      let updatedActive: User | null = null;
+      const updated = users.map((u) => {
+        if (u.id === editingUserId) {
+          const mod = {
+            ...u,
+            name: (uName || '').trim(),
+            nip: (uNip || '').trim(),
+            title: (uTitle || '').trim(),
+            role: uRole,
+            username: (uUsername || '').trim(),
+            password: uPassword || u.password,
+          };
+          if (u.id === activeUser.id || u.username.toLowerCase() === activeUser.username.toLowerCase()) {
+            updatedActive = mod;
+          }
+          return mod;
+        }
+        return u;
+      });
+      if (updatedActive) {
+        onUpdateActiveUser(updatedActive);
+      }
       onSaveUsers(updated);
     } else {
       const newUser: User = {
@@ -228,13 +246,13 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                NIP / Kode Pengajar
+                NIPK / Kode Pengajar
               </label>
               <input
                 type="text"
                 value={profileNip}
                 onChange={(e) => setProfileNip(e.target.value)}
-                placeholder="NIP Pengajar (opsional)"
+                placeholder="NIPK Pengajar (opsional)"
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -365,7 +383,7 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">Nama Pengajar / NIP</th>
+                <th className="px-4 py-3">Nama Pengajar / NIPK</th>
                 <th className="px-4 py-3">Jabatan</th>
                 <th className="px-4 py-3">Username</th>
                 <th className="px-4 py-3">Password</th>
@@ -384,7 +402,7 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
                       <div className="font-bold text-slate-800 text-sm">{u.name}</div>
                       <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
                         <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{u.id}</span>
-                        {u.nip && <span>NIP: {u.nip}</span>}
+                        {u.nip && <span>NIPK: {u.nip}</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-700">{u.title || '-'}</td>
@@ -480,12 +498,12 @@ export const KelolaAkunView: React.FC<KelolaAkunViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">NIP / NIPK</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">NIPK</label>
                 <input
                   type="text"
                   value={uNip}
                   onChange={(e) => setUNip(e.target.value)}
-                  placeholder="NIP Pengajar"
+                  placeholder="NIPK Pengajar (opsional)"
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
