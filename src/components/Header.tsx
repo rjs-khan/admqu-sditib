@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">NIP: {activeUser.nip || '-'}</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">NIPK: {activeUser.nip || '-'}</span>
               </div>
 
               <button
