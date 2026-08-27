@@ -189,6 +189,15 @@ export default function App() {
     if (data.users !== undefined && data.users.length > 0) {
       setUsers(data.users);
       storage.saveUsers(data.users);
+      if (activeUser) {
+        const found = data.users.find(
+          (u) => u.id === activeUser.id || u.username.toLowerCase() === activeUser.username.toLowerCase()
+        );
+        if (found) {
+          setActiveUser(found);
+          storage.saveActiveUser(found);
+        }
+      }
     }
     if (data.settings) {
       let storedTheme: any = undefined;
@@ -571,11 +580,33 @@ export default function App() {
   const handleSaveUsers = (updated: User[]) => {
     setUsers(updated);
     storage.saveUsers(updated);
+    if (activeUser) {
+      const refreshedActive = updated.find(
+        (u) => u.id === activeUser.id || u.username.toLowerCase() === activeUser.username.toLowerCase()
+      );
+      if (refreshedActive) {
+        setActiveUser(refreshedActive);
+        storage.saveActiveUser(refreshedActive);
+      }
+    }
     syncState({ users: updated });
   };
 
   const handleUpdateActiveUser = (updated: User) => {
     setActiveUser(updated);
+    storage.saveActiveUser(updated);
+    setUsers((prevUsers) => {
+      const exists = prevUsers.some((u) => u.id === updated.id);
+      let newUsers: User[];
+      if (exists) {
+        newUsers = prevUsers.map((u) => (u.id === updated.id ? updated : u));
+      } else {
+        newUsers = [...prevUsers, updated];
+      }
+      storage.saveUsers(newUsers);
+      syncState({ users: newUsers });
+      return newUsers;
+    });
   };
 
   const handlePurgeData = async (options: PurgeOptions) => {
