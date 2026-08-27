@@ -1516,7 +1516,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           {/* NIP / NIPK Guru */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              NIP / NIPK Guru Logged In
+              NIPK Guru Logged In
             </label>
             <input
               type="text"
@@ -1544,14 +1544,14 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           {/* NIP / NIPK Kepala Sekolah */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              NIP / NIPK Kepala Sekolah
+              NIPK Kepala Sekolah
             </label>
             <input
               type="text"
               value={headmasterNip}
               onChange={(e) => setHeadmasterNip(e.target.value)}
               disabled={!isAdmin}
-              placeholder="NIP Kepala Sekolah"
+              placeholder="NIPK Kepala Sekolah"
               className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
             />
           </div>
