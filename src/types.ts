@@ -63,6 +63,8 @@ export interface Halaqoh {
   id: string;
   name: string;
   level: ClassLevel;
+  teacherName?: string;
+  teacherNip?: string;
   waGroupLink: string;
   createdAt: string;
 }
