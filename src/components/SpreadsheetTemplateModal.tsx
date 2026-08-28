@@ -17,10 +17,10 @@ export const SpreadsheetTemplateModal: React.FC<SpreadsheetTemplateModalProps> =
   const sheetsData = [
     {
       name: '1. Data_Kelas',
-      headers: ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'],
+      headers: ['id', 'nama_kelas', 'tingkat', 'nama_pengampu', 'nipk', 'link_grup_wa', 'tanggal_dibuat'],
       rows: [
-        ['kls-0001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
-        ['kls-0002', 'Halaqoh An-Nur', 'Lanjut', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
+        ['kls-0001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'Ustadz Abdullah, S.Pd.I', '19850101 201001 1 001', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
+        ['kls-0002', 'Halaqoh An-Nur', 'Lanjut', 'Ustadz Ahmad Fauzi', '19880202 201201 1 002', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
       ],
     },
     {
