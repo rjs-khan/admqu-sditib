@@ -33,9 +33,14 @@ CREATE TABLE IF NOT EXISTS halaqohs (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   level TEXT NOT NULL,
+  teacher_name TEXT,
+  teacher_nip TEXT,
   wa_group_link TEXT,
   created_at TEXT
 );
+-- Migration if table already exists
+ALTER TABLE halaqohs ADD COLUMN IF NOT EXISTS teacher_name TEXT;
+ALTER TABLE halaqohs ADD COLUMN IF NOT EXISTS teacher_nip TEXT;
 
 -- 3. Tabel Santri / Murid
 CREATE TABLE IF NOT EXISTS santris (
