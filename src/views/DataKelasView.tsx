@@ -143,6 +143,11 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                       {hlq.teacherName ? (
                         <span className="font-bold text-slate-800">
                           {hlq.teacherName}
+                          {hlq.teacherNip && (
+                            <span className="font-mono text-slate-500 font-normal ml-1.5 text-[11px]">
+                              (NIPK: {hlq.teacherNip})
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <span className="text-slate-400 italic">Belum ditentukan</span>
@@ -271,8 +276,13 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                     <select
                       value={(users || []).some((u) => u.name === teacherName) ? teacherName : ''}
                       onChange={(e) => {
-                        if (e.target.value) {
-                          setTeacherName(e.target.value);
+                        const selectedVal = e.target.value;
+                        if (selectedVal) {
+                          setTeacherName(selectedVal);
+                          const matchedUser = (users || []).find((u) => u.name === selectedVal);
+                          if (matchedUser && matchedUser.nip) {
+                            setTeacherNip(matchedUser.nip);
+                          }
                         }
                       }}
                       className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
@@ -288,7 +298,21 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 </div>
               </div>
 
-              {/* 4. Link grup whatsapp */}
+              {/* 4. NIPK Pengampu (Bisa diisi manual atau terisi otomatis dari akun) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  NIPK <span className="text-slate-400 font-normal">(Opsional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={teacherNip}
+                  onChange={(e) => setTeacherNip(e.target.value)}
+                  placeholder="Contoh: 19850101 201001 1 001"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono text-xs"
+                />
+              </div>
+
+              {/* 5. Link grup whatsapp */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Link Grup WhatsApp (Opsional)
