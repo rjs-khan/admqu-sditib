@@ -107,6 +107,8 @@ export async function fetchDatabaseFromSupabase(): Promise<{
       id: h.id,
       name: h.name,
       level: h.level,
+      teacherName: h.teacher_name || h.teacherName || undefined,
+      teacherNip: h.teacher_nip || h.teacherNip || undefined,
       waGroupLink: h.wa_group_link || '',
       createdAt: h.created_at || '',
     }));
@@ -381,6 +383,8 @@ export async function saveDatabaseToSupabase(payload: FullDatabasePayload): Prom
           id: h.id,
           name: h.name,
           level: h.level,
+          teacher_name: h.teacherName || null,
+          teacher_nip: h.teacherNip || null,
           wa_group_link: h.waGroupLink || null,
           created_at: h.createdAt || null,
         }))
