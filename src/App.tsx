@@ -788,6 +788,7 @@ export default function App() {
             <DataKelasView
               halaqohs={halaqohs}
               santris={santris}
+              users={users}
               settings={settings}
               onSaveHalaqoh={handleSaveHalaqohItem}
               onDeleteHalaqoh={handleDeleteHalaqohItem}
