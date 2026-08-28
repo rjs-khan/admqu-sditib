@@ -48,16 +48,18 @@ export function downloadCurrentDatabaseXlsx(data: {
   const wb = XLSX.utils.book_new();
 
   // 1. Data_Kelas
-  const kelasHeaders = ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'];
+  const kelasHeaders = ['id', 'nama_kelas', 'tingkat', 'nama_pengampu', 'nipk', 'link_grup_wa', 'tanggal_dibuat'];
   const kelasRows = (data.halaqohs || []).map((k) => [
     k.id || '',
     k.name || '',
     k.level || '',
+    k.teacherName || '',
+    k.teacherNip || '',
     k.waGroupLink || '',
     k.createdAt || '',
   ]);
   const wsKelas = XLSX.utils.aoa_to_sheet([kelasHeaders, ...sanitizeRows(kelasRows)]);
-  wsKelas['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 15 }, { wch: 35 }, { wch: 15 }];
+  wsKelas['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 15 }, { wch: 22 }, { wch: 18 }, { wch: 35 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsKelas, '1. Data_Kelas');
 
   // 2. Data_Santri
@@ -337,13 +339,13 @@ export function downloadDatabaseTemplateXlsx() {
   const wb = XLSX.utils.book_new();
 
   // 1. Data_Kelas
-  const kelasHeaders = ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'];
+  const kelasHeaders = ['id', 'nama_kelas', 'tingkat', 'nama_pengampu', 'nipk', 'link_grup_wa', 'tanggal_dibuat'];
   const kelasRows = [
-    ['kls-0001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
-    ['kls-0002', 'Halaqoh An-Nur', 'Lanjut', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
+    ['kls-0001', 'Halaqoh Al-Fatihah', 'Tahfizh', 'Ustadz Abdullah, S.Pd.I', '19850101 201001 1 001', 'https://chat.whatsapp.com/sample1', '2025-01-01'],
+    ['kls-0002', 'Halaqoh An-Nur', 'Lanjut', 'Ustadz Ahmad Fauzi', '19880202 201201 1 002', 'https://chat.whatsapp.com/sample2', '2025-01-01'],
   ];
   const wsKelas = XLSX.utils.aoa_to_sheet([kelasHeaders, ...kelasRows]);
-  wsKelas['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 15 }, { wch: 35 }, { wch: 15 }];
+  wsKelas['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 15 }, { wch: 22 }, { wch: 18 }, { wch: 35 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsKelas, '1. Data_Kelas');
 
   // 2. Data_Santri
@@ -559,8 +561,8 @@ export function downloadCurrentDatabaseCsv(data: {
   const sheetsData = [
     {
       name: '1. Data_Kelas',
-      headers: ['id', 'nama_kelas', 'tingkat', 'link_grup_wa', 'tanggal_dibuat'],
-      rows: (data.halaqohs || []).map((k) => [k.id, k.name, k.level, k.waGroupLink || '', k.createdAt]),
+      headers: ['id', 'nama_kelas', 'tingkat', 'nama_pengampu', 'nipk', 'link_grup_wa', 'tanggal_dibuat'],
+      rows: (data.halaqohs || []).map((k) => [k.id, k.name, k.level, k.teacherName || '', k.teacherNip || '', k.waGroupLink || '', k.createdAt]),
     },
     {
       name: '2. Data_Santri',
@@ -796,6 +798,8 @@ function processRawDataToPayload(raw: any, cleanUrl: string) {
         id: String(k.id || `kls-${Math.random().toString(36).substring(2, 7)}`),
         name: String(k.nama_kelas || k.nama_halaqoh || k.name || 'Halaqoh'),
         level: (['menengah', 'lanjut', 'tahfizh'].includes(String(k.tingkat || k.level).toLowerCase()) ? String(k.tingkat || k.level).toLowerCase() : 'tahfizh') as ClassLevel,
+        teacherName: k.nama_pengampu || k.pengampu || k.teacher_name || k.teacherName ? String(k.nama_pengampu || k.pengampu || k.teacher_name || k.teacherName) : undefined,
+        teacherNip: k.nipk || k.nip || k.teacher_nip || k.teacherNip ? String(k.nipk || k.nip || k.teacher_nip || k.teacherNip) : undefined,
         waGroupLink: k.link_grup_wa || k.wa_group_link || k.waGroupLink ? String(k.link_grup_wa || k.wa_group_link || k.waGroupLink) : undefined,
         createdAt: String(k.tanggal_dibuat || k.created_at || k.createdAt || new Date().toISOString().split('T')[0]),
       }))
