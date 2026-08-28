@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Halaqoh, ClassLevel, Santri, SchoolSettings, User } from '../types';
 import { getStudentTerm } from '../lib/studentTerm';
 import { generateCleanId } from '../lib/idUtils';
-import { Building2, Plus, ExternalLink, Trash2, Edit, X, Save, UserCheck, User as UserIcon } from 'lucide-react';
+import { Building2, Plus, ExternalLink, Trash2, Edit, X, Save, UserCheck } from 'lucide-react';
 
 interface DataKelasViewProps {
   halaqohs: Halaqoh[];
@@ -143,11 +143,6 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                       {hlq.teacherName ? (
                         <span className="font-bold text-slate-800">
                           {hlq.teacherName}
-                          {hlq.teacherNip && (
-                            <span className="font-mono text-slate-500 font-normal ml-1">
-                              (NIPK: {hlq.teacherNip})
-                            </span>
-                          )}
                         </span>
                       ) : (
                         <span className="text-slate-400 italic">Belum ditentukan</span>
@@ -246,50 +241,54 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 </select>
               </div>
 
-              {/* 3. Nama Pengampu (Dropdown dari data akun terdaftar) */}
+              {/* 3. Nama Pengampu (Bisa tulis sendiri atau pilih dari akun terdaftar) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nama Pengampu <span className="text-slate-400 font-normal">(Opsional)</span>
-                </label>
-                <select
-                  value={teacherName}
-                  onChange={(e) => {
-                    const selectedName = e.target.value;
-                    setTeacherName(selectedName);
-                    const selectedUser = (users || []).find((u) => u.name === selectedName);
-                    if (selectedUser) {
-                      setTeacherNip(selectedUser.nip || '');
-                    }
-                  }}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-                >
-                  <option value="">-- Pilih Pengampu dari Akun Terdaftar --</option>
-                  {(users || []).map((u) => (
-                    <option key={u.id} value={u.name}>
-                      {u.name} {u.nip ? `(NIPK: ${u.nip})` : ''} - {u.title || (u.role === 'admin' ? 'Administrator' : 'Pengajar')}
-                    </option>
-                  ))}
-                  {teacherName && !(users || []).some((u) => u.name === teacherName) && (
-                    <option value={teacherName}>{teacherName} (Kustom)</option>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Nama Pengampu <span className="text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  {users && users.length > 0 && (
+                    <span className="text-[11px] text-slate-400">Bisa ketik bebas atau pilih akun</span>
                   )}
-                </select>
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    list="registered-teachers-list"
+                    value={teacherName}
+                    onChange={(e) => setTeacherName(e.target.value)}
+                    placeholder="Ketik nama pengampu atau pilih dari opsi di bawah..."
+                    className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <datalist id="registered-teachers-list">
+                    {(users || []).map((u) => (
+                      <option key={u.id} value={u.name} />
+                    ))}
+                  </datalist>
+
+                  {users && users.length > 0 && (
+                    <select
+                      value={(users || []).some((u) => u.name === teacherName) ? teacherName : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setTeacherName(e.target.value);
+                        }
+                      }}
+                      className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    >
+                      <option value="">-- Atau Pilih Nama dari Akun Terdaftar --</option>
+                      {(users || []).map((u) => (
+                        <option key={u.id} value={u.name}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
-              {/* 4. NIPK (Opsional) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  NIPK <span className="text-slate-400 font-normal">(Opsional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={teacherNip}
-                  onChange={(e) => setTeacherNip(e.target.value)}
-                  placeholder="Contoh: 19850101 201001 1 001"
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-
-              {/* 5. Link grup whatsapp */}
+              {/* 4. Link grup whatsapp */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Link Grup WhatsApp (Opsional)
