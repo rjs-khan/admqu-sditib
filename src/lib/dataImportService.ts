@@ -183,10 +183,19 @@ function parseHalaqohs(rows: any[]): Halaqoh[] {
     const levelRaw = String(row.tingkat || row.level || row.Tingkat || 'tahfizh').toLowerCase().trim();
     const level: ClassLevel = (['menengah', 'lanjut', 'tahfizh'].includes(levelRaw) ? levelRaw : 'tahfizh') as ClassLevel;
 
+    const teacherName = String(
+      row.nama_pengampu || row.pengampu || row.teacherName || row.teacher_name || row['Nama Pengampu'] || row['Pengampu'] || ''
+    ).trim();
+    const teacherNip = String(
+      row.nipk || row.nip || row.teacherNip || row.teacher_nip || row.NIPK || row.NIP || row['NIPK'] || row['NIP'] || ''
+    ).trim();
+
     const h: Halaqoh = {
       id: String(row.id || row.ID || generateCleanId('hlq', list, idx)).trim(),
       name: name || `Halaqoh ${idx + 1}`,
       level,
+      teacherName: teacherName || undefined,
+      teacherNip: teacherNip || undefined,
       waGroupLink: String(row.link_grup_wa || row.waGroupLink || row.wa_group_link || row.LinkWA || row['Link Group WA'] || row['Link WA Group'] || '').trim(),
       createdAt: String(row.tanggal_dibuat || row.createdAt || row.created_at || row.TanggalBuat || new Date().toISOString().split('T')[0]).trim(),
     };
