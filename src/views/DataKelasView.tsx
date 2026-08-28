@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Halaqoh, ClassLevel, Santri, SchoolSettings } from '../types';
+import { Halaqoh, ClassLevel, Santri, SchoolSettings, User } from '../types';
 import { getStudentTerm } from '../lib/studentTerm';
 import { generateCleanId } from '../lib/idUtils';
-import { Building2, Plus, ExternalLink, Trash2, Edit, X, Save, AlertCircle } from 'lucide-react';
+import { Building2, Plus, ExternalLink, Trash2, Edit, X, Save, UserCheck, User as UserIcon } from 'lucide-react';
 
 interface DataKelasViewProps {
   halaqohs: Halaqoh[];
   santris: Santri[];
+  users?: User[];
   settings?: SchoolSettings;
   onSaveHalaqoh: (halaqoh: Halaqoh) => void;
   onDeleteHalaqoh: (id: string) => void;
@@ -15,6 +16,7 @@ interface DataKelasViewProps {
 export const DataKelasView: React.FC<DataKelasViewProps> = ({
   halaqohs,
   santris,
+  users = [],
   settings,
   onSaveHalaqoh,
   onDeleteHalaqoh,
@@ -26,12 +28,16 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
   // Form State
   const [name, setName] = useState('');
   const [level, setLevel] = useState<ClassLevel>('tahfizh');
+  const [teacherName, setTeacherName] = useState('');
+  const [teacherNip, setTeacherNip] = useState('');
   const [waGroupLink, setWaGroupLink] = useState('');
 
   const handleOpenNewModal = () => {
     setEditingId(null);
     setName('');
     setLevel('tahfizh');
+    setTeacherName('');
+    setTeacherNip('');
     setWaGroupLink('');
     setIsModalOpen(true);
   };
@@ -40,6 +46,8 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
     setEditingId(hlq.id);
     setName(hlq.name);
     setLevel(hlq.level);
+    setTeacherName(hlq.teacherName || '');
+    setTeacherNip(hlq.teacherNip || '');
     setWaGroupLink(hlq.waGroupLink || '');
     setIsModalOpen(true);
   };
@@ -52,6 +60,8 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
       id: editingId || generateCleanId('hlq', halaqohs),
       name: (name || '').trim(),
       level,
+      teacherName: (teacherName || '').trim() || undefined,
+      teacherNip: (teacherNip || '').trim() || undefined,
       waGroupLink: (waGroupLink || '').trim(),
       createdAt: editingId
         ? halaqohs.find((h) => h.id === editingId)?.createdAt || new Date().toISOString().split('T')[0]
@@ -115,13 +125,35 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-lg font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                    {hlq.name}
-                  </h3>
-                  <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                    {hlq.id}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-lg font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                      {hlq.name}
+                    </h3>
+                    <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shrink-0">
+                      {hlq.id}
+                    </span>
+                  </div>
+
+                  {/* Nama Pengampu di bawah nama halaqoh/kelas */}
+                  <div className="flex items-center gap-2 text-xs py-1.5 px-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <div className="truncate text-slate-700">
+                      <span className="text-slate-500 font-medium mr-1">Pengampu:</span>
+                      {hlq.teacherName ? (
+                        <span className="font-bold text-slate-800">
+                          {hlq.teacherName}
+                          {hlq.teacherNip && (
+                            <span className="font-mono text-slate-500 font-normal ml-1">
+                              (NIPK: {hlq.teacherNip})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Belum ditentukan</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {hlq.waGroupLink ? (
@@ -175,14 +207,14 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveSubmit} className="p-5 space-y-4">
-              {/* 2.1.1 Nama Kelas / Halaqoh */}
+              {/* 1. Nama Kelas / Halaqoh */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Nama Kelas / Halaqoh <span className="text-rose-500">*</span>
@@ -197,7 +229,7 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 />
               </div>
 
-              {/* 2.1.2 Tingkat (menengah, lanjut, tahfizh) */}
+              {/* 2. Tingkat Kelas */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Tingkat Kelas
@@ -205,7 +237,7 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 <select
                   value={level}
                   onChange={(e) => setLevel(e.target.value as ClassLevel)}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="pemula">Pemula</option>
                   <option value="menengah">Menengah</option>
@@ -214,7 +246,50 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 </select>
               </div>
 
-              {/* 2.1.3 Link grup whatsapp */}
+              {/* 3. Nama Pengampu (Dropdown dari data akun terdaftar) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Pengampu <span className="text-slate-400 font-normal">(Opsional)</span>
+                </label>
+                <select
+                  value={teacherName}
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    setTeacherName(selectedName);
+                    const selectedUser = (users || []).find((u) => u.name === selectedName);
+                    if (selectedUser) {
+                      setTeacherNip(selectedUser.nip || '');
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="">-- Pilih Pengampu dari Akun Terdaftar --</option>
+                  {(users || []).map((u) => (
+                    <option key={u.id} value={u.name}>
+                      {u.name} {u.nip ? `(NIPK: ${u.nip})` : ''} - {u.title || (u.role === 'admin' ? 'Administrator' : 'Pengajar')}
+                    </option>
+                  ))}
+                  {teacherName && !(users || []).some((u) => u.name === teacherName) && (
+                    <option value={teacherName}>{teacherName} (Kustom)</option>
+                  )}
+                </select>
+              </div>
+
+              {/* 4. NIPK (Opsional) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  NIPK <span className="text-slate-400 font-normal">(Opsional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={teacherNip}
+                  onChange={(e) => setTeacherNip(e.target.value)}
+                  placeholder="Contoh: 19850101 201001 1 001"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* 5. Link grup whatsapp */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Link Grup WhatsApp (Opsional)
@@ -228,18 +303,18 @@ export const DataKelasView: React.FC<DataKelasViewProps> = ({
                 />
               </div>
 
-              {/* 2.1.4 Simpan kelas */}
+              {/* Tombol Aksi */}
               <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-5 py-2 custom-theme-btn text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2 custom-theme-btn text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-all"
                 >
                   <Save className="w-4 h-4" />
                   <span>Simpan Kelas</span>
