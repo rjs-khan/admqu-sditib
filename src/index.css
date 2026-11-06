@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Custom CSS variables for flexible theme customizer */
+:root {
+  --app-header-bg: #ffffff;
+  --app-header-text: #0f172a;
+  --app-sidebar-bg: #0f172a;
+  --app-sidebar-text: #cbd5e1;
+  --app-content-bg: #f8fafc;
+  --app-content-text: #0f172a;
+  --app-primary-color: #059669;
+  --app-button-bg: #059669;
+  --app-button-text: #ffffff;
+}
+
+.dark {
+  --app-header-bg: #0f172a;
+  --app-header-text: #f8fafc;
+  --app-sidebar-bg: #020617;
+  --app-sidebar-text: #e2e8f0;
+  --app-content-bg: #0b1329;
+  --app-content-text: #f8fafc;
+  --app-primary-color: #10b981;
+  --app-button-bg: #10b981;
+  --app-button-text: #ffffff;
+}
+
+/* Comfortable Dark Mode Base */
+.dark body, html.dark body {
+  background-color: #0b1329;
+  color: #f1f5f9;
+}
+
+.sidebar-active {
+  border-left: 4px solid var(--app-primary-color, #10b981);
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  color: #f8fafc;
+}
+
+.stat-icon {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.dark .stat-icon {
+  background-color: rgba(6, 78, 59, 0.5);
+  color: #34d399;
+}
+
+/* Custom theme helper classes */
+.custom-theme-header {
+  background-color: var(--app-header-bg) !important;
+  color: var(--app-header-text) !important;
+}
+
+.custom-theme-sidebar {
+  background-color: var(--app-sidebar-bg) !important;
+  color: var(--app-sidebar-text) !important;
+}
+
+.custom-theme-content {
+  background-color: var(--app-content-bg) !important;
+  color: var(--app-content-text) !important;
+}
+
+.custom-theme-btn, .btn-primary {
+  background-color: var(--app-button-bg, var(--app-primary-color, #059669)) !important;
+  color: var(--app-button-text, #ffffff) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-theme-btn:hover, .btn-primary:hover {
+  filter: brightness(0.92) !important;
+  opacity: 0.95;
+}
+
+.bg-theme-primary {
+  background-color: var(--app-primary-color, #059669) !important;
+}
+
+.text-theme-primary {
+  color: var(--app-primary-color, #059669) !important;
+}
+
+.border-theme-primary {
+  border-color: var(--app-primary-color, #059669) !important;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide non-printable elements */
+  header,
+  aside,
+  nav,
+  button,
+  select,
+  input,
+  form,
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Reset body and background */
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Remove fixed overlays during print */
+  .fixed:not(.print-modal-content) {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure printable area takes full width cleanly without outer borders */
+  #rekap-printable-document,
+  #rapor-printable-document,
+  .printable-document {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Prevent row splitting and text truncation across page breaks */
+  table {
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr, th, td {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  tbody {
+    page-break-inside: auto !important;
+  }
+
+  .avoid-break,
+  .keep-together,
+  .signature-section,
+  .kop-surat,
+  h1, h2, h3, h4 {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  /* Exact background color printing for table headers */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}
+
+/* Page Break & Clean Border Utility Rules for PDF Rendering */
+.avoid-break,
+.keep-together {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  break-inside: avoid-page !important;
+}
+
+/* Printable Document Base Class */
+.printable-document {
+  box-sizing: border-box !important;
+}
+
+
